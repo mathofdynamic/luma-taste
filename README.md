@@ -1,8 +1,33 @@
 # Luma Taste
 
-**A Codex skill for designing and animating LUMA interfaces with a consistent Persian-first visual system.**
+<p align="center">
+  <strong>A Codex skill for designing and animating LUMA interfaces with a Persian-first visual system.</strong>
+</p>
+
+<p align="center">
+  <img src="assets/readme/luma-taste-hero.jpg" alt="A 3D purple, magenta, and amber ribbon flowing through translucent interface forms" width="100%">
+</p>
+
+<p align="center"><em>Purposeful motion. Clear RTL composition. Fast mobile pages.</em></p>
 
 Luma Taste guides page work toward LUMA's dark, premium visual identity, expressive motion, clear RTL layouts, and fast mobile behavior. It applies to new pages as well as focused restyling of existing pages and components.
+
+## Visual direction
+
+<table>
+  <tr>
+    <th align="center">Expressive motion</th>
+    <th align="center">Persian-first grid</th>
+  </tr>
+  <tr>
+    <td><img src="assets/readme/luma-taste-motion.jpg" alt="A translucent glass ribbon looping around a dark ceramic core" width="100%"></td>
+    <td><img src="assets/readme/luma-taste-rtl-grid.jpg" alt="A modular 3D layout grid linked by a right-to-left gradient path" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center">A continuous motion study in LUMA's signature gradient.</td>
+    <td align="center">A disciplined modular layout with right-to-left flow.</td>
+  </tr>
+</table>
 
 ## What it covers
 
@@ -80,7 +105,8 @@ Use `--chrome <path>` when Playwright cannot find a Chromium executable, and `--
 | --- | --- |
 | [`SKILL.md`](SKILL.md) | Invocation, workflow, design standards, and reference map |
 | [`references/`](references/) | Identity, layout, motion, entrance, process, and verification guidance |
-| [`assets/`](assets/) | Starter design tokens, motion runtime, and interaction styles |
+| [`assets/`](assets/) | Starter design files and README artwork |
+| [`assets/readme/`](assets/readme/) | Original 3D visuals for this README |
 | [`scripts/motion-audit.mjs`](scripts/motion-audit.mjs) | Browser audit for motion and layout regressions |
 | [`agents/openai.yaml`](agents/openai.yaml) | Codex display name and suggested prompt |
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Luma Taste"
+  short_description: "Design and animate Luma pages with Luma's taste: rich motion, fast pages"
+  default_prompt: "Use $luma-taste to design, restyle, or animate this Luma page with the Luma motion matrix, grid, and evidence audit."

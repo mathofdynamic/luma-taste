@@ -1,0 +1,87 @@
+/* Luma tokens: dark-first, Persian RTL. Scope under [data-luma] if the project must not leak styles to other pages. */
+:root {
+  /* brand (sampled from the Luma logo) */
+  --luma-purple: #8B1BAD;
+  --luma-magenta: #ED457B;
+  --luma-orange: #FF9024;
+  --luma-gradient: linear-gradient(90deg, #8B1BAD 0%, #ED457B 55%, #FF9024 100%);
+  /* lighter ramp for gradient TEXT on dark (passes contrast at display sizes) */
+  --luma-text-purple: #C06BE6;
+  --luma-text-magenta: #F2598E;
+  --luma-text-orange: #FFA64D;
+
+  /* dark theme (default) */
+  --bg: #07070A;
+  --surface-1: #0E0E12;
+  --surface-2: #15151B;
+  --border: #23232B;
+  --border-strong: #34343F;
+  --text: #F5F5F7;
+  --text-2: #B4B4BE;
+  --text-3: #8A8A96;
+  --focus: #ED457B;
+
+  /* materials: blur + LOW opacity (never opaque, never blur-only) */
+  --glass-bg: rgb(10 10 14 / .55);
+  --glass-border: rgb(255 255 255 / .08);
+  --glass-blur: 16px;
+  --scrim-bg: rgb(0 0 0 / .45);
+  --scrim-blur: 10px;
+
+  /* shape */
+  --radius-pill: 9999px;
+  --radius-card: 20px;
+  --radius-lg: 24px;
+  --radius-media: 16px;
+  --radius-input: 12px;
+
+  /* type (Persian: never letter-spacing) */
+  --font-fa: 'Vazirmatn', system-ui, -apple-system, 'Segoe UI', Tahoma, sans-serif;
+  --font-en: 'Inter', system-ui, sans-serif;
+  --text-display: clamp(2.125rem, 1.4rem + 3.2vw, 3.75rem);
+  --text-h2: clamp(1.625rem, 1.2rem + 1.8vw, 2.5rem);
+  --text-h3: clamp(1.125rem, 1.05rem + .4vw, 1.375rem);
+  --text-body: clamp(.9375rem, .9rem + .2vw, 1rem);
+
+  /* grid */
+  --container: 1200px;
+  --gutter: clamp(16px, 2vw, 24px);
+  --page-pad: clamp(20px, 4vw, 48px);
+  --space-section: clamp(64px, 8vw, 112px);
+}
+
+[data-theme="light"] {
+  --bg: #FBFAF9;
+  --surface-1: #F4F2F0;
+  --surface-2: #EBE8E4;
+  --border: #E4E0DB;
+  --border-strong: #CFCAC4;
+  --text: #0A0A0C;
+  --text-2: #4A4650;
+  --text-3: #6E6A74;
+  --glass-bg: rgb(251 250 249 / .6);
+  --glass-border: rgb(0 0 0 / .08);
+  --scrim-bg: rgb(20 18 24 / .35);
+  /* darker brand ramp for text on light */
+  --luma-text-purple: #8B1BAD;
+  --luma-text-magenta: #D6336C;
+  --luma-text-orange: #E8760A;
+}
+
+*, *::before, *::after { box-sizing: border-box; } /* required: .lt-container is width:100% + padding */
+html { direction: rtl; }
+h1, h2, h3, h4, p { letter-spacing: 0; } /* tracking breaks Persian letter joins */
+
+.lt-container {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--container);
+  margin-inline: auto;
+  padding-inline: var(--page-pad);
+}
+.lt-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: var(--gutter);
+  row-gap: var(--gutter);
+}

@@ -1,0 +1,31 @@
+/* Hover stories: each icon/illustration reacts as what it IS. Pattern for every new service:
+   1) mark the element data-story="<name>"  2) play on real hover, :focus-visible, or data-story-play="true" (set once by JS on touch/in-view)
+   Transform/opacity only. 180-700ms. Replayable. Hover is gated to real pointers. */
+:root { --lm-story-ease: var(--lm-ease-ui, cubic-bezier(.23, 1, .32, 1)); }
+
+/* wave: text-to-speech / voice. Bars are <i style="--n:0..N">, each scaleY-animated with a stagger */
+[data-story="wave"] i { display: block; transform-origin: 50% 100%; }
+@keyframes lm-wave { 0% { transform: scaleY(.45); } 35% { transform: scaleY(1); } 70% { transform: scaleY(.6); } 100% { transform: scaleY(.85); } }
+[data-story="wave"][data-story-play="true"] i,
+.lm-card:focus-visible [data-story="wave"] i { animation: lm-wave 700ms var(--lm-story-ease) both; animation-delay: calc(var(--n, 0) * 60ms); }
+
+/* snip: background removal. Two blades rotate in opposite directions, twice */
+[data-story="snip"] .blade-a, [data-story="snip"] .blade-b { transform-origin: 50% 50%; }
+@keyframes lm-snip-a { to { transform: rotate(-12deg); } }
+@keyframes lm-snip-b { to { transform: rotate(12deg); } }
+[data-story="snip"][data-story-play="true"] .blade-a, .lm-card:focus-visible [data-story="snip"] .blade-a { animation: lm-snip-a 140ms var(--lm-story-ease) 2 alternate; }
+[data-story="snip"][data-story-play="true"] .blade-b, .lm-card:focus-visible [data-story="snip"] .blade-b { animation: lm-snip-b 140ms var(--lm-story-ease) 2 alternate; }
+
+/* push: upscale. The frame scales and arrows push outward */
+[data-story="push"] { transition: transform 240ms var(--lm-story-ease); }
+[data-story="push"][data-story-play="true"], .lm-card:focus-visible [data-story="push"] { transform: scale(1.08); }
+
+@media (hover: hover) and (pointer: fine) {
+  .lm-card:hover [data-story="wave"] i { animation: lm-wave 700ms var(--lm-story-ease) both; animation-delay: calc(var(--n, 0) * 60ms); }
+  .lm-card:hover [data-story="snip"] .blade-a { animation: lm-snip-a 140ms var(--lm-story-ease) 2 alternate; }
+  .lm-card:hover [data-story="snip"] .blade-b { animation: lm-snip-b 140ms var(--lm-story-ease) 2 alternate; }
+  .lm-card:hover [data-story="push"] { transform: scale(1.08); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-story] , [data-story] i, [data-story] .blade-a, [data-story] .blade-b { animation: none !important; transition: none !important; transform: none !important; }
+}

@@ -1,0 +1,146 @@
+/* Luma motion layer. Compositor-friendly properties only (opacity, transform) except the gradient-word
+   background-position, which is paint-only and therefore gated to run ONLY while in view. */
+:root {
+  /* Entrance contract (see references/entrance-motion-contract.md): do not change without a documented reason */
+  --lm-dur: 100ms;
+  --lm-lead: calc(var(--lm-dur) / 3);
+  --lm-ease-out: cubic-bezier(.16, 1, .3, 1);
+  --lm-rise: 20px;
+  --lm-close-dur: 66ms;
+  --lm-close-rise: 8px;
+  --lm-ease-close: cubic-bezier(.4, 0, 1, 1);
+
+  /* Interaction tokens (hover/press/move) */
+  --lm-ease-ui: cubic-bezier(.23, 1, .32, 1);
+  --lm-ease-move: cubic-bezier(.77, 0, .175, 1);
+  --lm-hover-dur: 180ms;
+  --lm-press-dur: 120ms;
+}
+
+/* ---------- 1. Entrance (hidden ONLY after JS confirms motion is on) ---------- */
+.lm-motion [data-reveal]:not([data-motion-ignore], [data-motion-ignore] *) {
+  opacity: 0;
+  transform: translate3d(0, var(--lm-rise), 0);
+}
+.lm-motion [data-reveal][data-revealed="true"] {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  transition:
+    opacity var(--lm-dur) var(--lm-ease-out) calc(var(--lm-i, 0) * var(--lm-lead)),
+    transform var(--lm-dur) var(--lm-ease-out) calc(var(--lm-i, 0) * var(--lm-lead));
+}
+
+/* ---------- 2. Transient surfaces: menus, popovers, dialogs, drawers, lightbox ---------- */
+.lm-surface { will-change: auto; }
+.lm-surface[data-state="closed"] {
+  opacity: 0;
+  transform: translate3d(0, var(--lm-rise), 0);
+  visibility: hidden;
+  pointer-events: none;
+  transition: none;
+}
+.lm-surface[data-state="open"] {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  visibility: visible;
+  transition:
+    opacity var(--lm-dur) var(--lm-ease-out),
+    transform var(--lm-dur) var(--lm-ease-out);
+}
+.lm-surface[data-state="closing"] {
+  opacity: 0;
+  transform: translate3d(0, var(--lm-close-rise), 0);
+  visibility: visible;
+  pointer-events: none;
+  transition:
+    opacity var(--lm-close-dur) var(--lm-ease-close),
+    transform var(--lm-close-dur) var(--lm-ease-close);
+}
+/* Backdrops animate opacity only (never translate with the panel) */
+.lm-scrim { background: var(--scrim-bg); -webkit-backdrop-filter: blur(var(--scrim-blur)); backdrop-filter: blur(var(--scrim-blur)); }
+.lm-scrim[data-state="closed"] { opacity: 0; visibility: hidden; pointer-events: none; transition: none; }
+.lm-scrim[data-state="open"] { opacity: 1; visibility: visible; transition: opacity var(--lm-dur) var(--lm-ease-out); }
+.lm-scrim[data-state="closing"] { opacity: 0; visibility: visible; pointer-events: none; transition: opacity var(--lm-close-dur) var(--lm-ease-close); }
+/* Items inside an open surface use the same cadence */
+.lm-surface[data-state="open"] > [data-surface-item] { animation: lm-item-in var(--lm-dur) var(--lm-ease-out) both; animation-delay: calc(var(--lm-i, 0) * var(--lm-lead)); }
+@keyframes lm-item-in { from { opacity: 0; transform: translate3d(0, var(--lm-rise), 0); } }
+
+/* ---------- Materials: blur + LOW opacity ---------- */
+.lm-glass {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  border: 1px solid var(--glass-border);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .lm-glass { background: color-mix(in srgb, var(--bg) 92%, transparent); }
+  .lm-scrim { background: color-mix(in srgb, #000 70%, transparent); }
+}
+
+/* ---------- Loop gating: loops run ONLY while data-in-view="true" (set by luma-motion.js) ---------- */
+[data-loop][data-in-view="true"] { --lm-loop-state: running; }
+
+/* ---------- 3. Animated gradient word (signature title treatment) ---------- */
+.lm-gradient-word {
+  background-image: linear-gradient(100deg,
+    var(--luma-text-purple) 0%, var(--luma-text-magenta) 25%, var(--luma-text-orange) 50%,
+    var(--luma-text-magenta) 75%, var(--luma-text-purple) 100%); /* first = last stop => seamless loop */
+  background-size: 200% auto;
+  background-repeat: repeat;
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+  animation: lm-gradient-flow var(--lm-gradient-period, 6s) linear infinite;
+  animation-play-state: var(--lm-loop-state, paused);
+}
+@keyframes lm-gradient-flow { to { background-position: 200% center; } } /* 200% of (box-image) = exactly one tile */
+
+/* ---------- 4. Infinite marquee (testimonials, logos). Track holds two identical sets; the 2nd is aria-hidden + inert ---------- */
+.lm-marquee {
+  overflow: hidden;
+  direction: ltr; /* geometry is physical; card text keeps dir=rtl below */
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+.lm-marquee__track {
+  display: flex;
+  width: max-content;
+  animation: lm-marquee var(--lm-marquee-period, 60s) linear infinite;
+  animation-direction: var(--lm-marquee-direction, normal);
+  animation-play-state: var(--lm-loop-state, paused);
+}
+.lm-marquee__track > * { flex: 0 0 auto; direction: rtl; margin-right: var(--lm-marquee-gap, 16px); } /* physical margin on purpose */
+@keyframes lm-marquee { to { transform: translate3d(-50%, 0, 0); } } /* two identical sets, margin on every item => period is exactly 50% */
+@media (hover: hover) and (pointer: fine) { .lm-marquee:hover { --lm-loop-state: paused; } }
+.lm-marquee:focus-within { --lm-loop-state: paused; }
+
+/* ---------- 5. Interactive response (hover gated to real pointers, press instant) ---------- */
+.lm-press { transition: transform var(--lm-press-dur) var(--lm-ease-ui); }
+.lm-press:active { transform: scale(.97); }
+@media (hover: hover) and (pointer: fine) {
+  .lm-card { transition: border-color var(--lm-hover-dur) var(--lm-ease-ui), background-color var(--lm-hover-dur) var(--lm-ease-ui); }
+  .lm-card:hover { border-color: var(--border-strong); background-color: var(--surface-2); }
+}
+
+/* ---------- 6. Scroll-linked playful fills (progressive enhancement; final state visible without support) ---------- */
+@supports (animation-timeline: view()) {
+  .lm-scroll-fill {
+    transform-origin: var(--lm-fill-origin, right);
+    transform: scaleX(0);
+    animation: lm-fill linear both;
+    animation-timeline: view();
+    animation-range: entry 10% cover 55%;
+  }
+  @keyframes lm-fill { to { transform: scaleX(1); } }
+}
+
+/* ---------- Reduced motion: reveal immediately, no translation, no stagger, no loops ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .lm-motion [data-reveal], .lm-motion [data-reveal][data-revealed="true"] { opacity: 1; transform: none; transition: none; }
+  .lm-surface[data-state="open"], .lm-surface[data-state="closing"] { transition: opacity 60ms linear; transform: none; }
+  .lm-surface[data-state="open"] > [data-surface-item] { animation: none; }
+  .lm-gradient-word { animation: none; background-position: 0 center; }
+  .lm-marquee { overflow-x: auto; -webkit-mask-image: none; mask-image: none; }
+  .lm-marquee__track { animation: none; }
+  .lm-marquee__track > [data-dup] { display: none; }
+  .lm-scroll-fill { animation: none; transform: none; }
+}

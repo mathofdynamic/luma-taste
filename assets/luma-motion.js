@@ -39,7 +39,7 @@ export function initLumaMotion(root = document) {
   if ('IntersectionObserver' in window) {
     loopIO = new IntersectionObserver(
       (entries) => entries.forEach((e) => e.target.setAttribute('data-in-view', e.isIntersecting ? 'true' : 'false')),
-      { rootMargin: '80px 0px 80px 0px', threshold: 0 }
+      { rootMargin: '0px', threshold: 0 } // strict: a loop never runs outside the viewport
     );
     root.querySelectorAll('[data-loop]').forEach((el) => loopIO.observe(el));
     cleanups.push(() => loopIO.disconnect());

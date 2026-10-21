@@ -4,7 +4,7 @@
  *
  *   npm i -D playwright-core   (or playwright)   # browser: set --chrome to a Chromium/Chrome executable if none is installed
  *   node .agents/skills/luma-taste/scripts/motion-audit.mjs --url http://localhost:3000 --out audit/motion \
- *        [--widths 375,1440] [--themes dark,light] [--chrome /path/to/chrome] [--theme-attr data-theme] [--seam]
+ *        [--widths 375,1440] [--themes dark,light] [--chrome /path/to/chrome] [--theme-attr data-theme|class] [--margin 0] [--seam]
  *
  * Checks (exit code 1 if any FAIL): loops running off-screen, clipped/ellipsized text, horizontal overflow,
  * text < 12px, letter-spacing on Persian text, reduced-motion behavior, no-JS visibility, entrance-contract drift.
@@ -13,6 +13,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { createRequire } from 'node:module';
+import { pathToFileURL } from 'node:url';
 
 const args = Object.fromEntries(process.argv.slice(2).reduce((acc, a, i, arr) => {
   if (a.startsWith('--')) acc.push([a.slice(2), arr[i + 1] && !arr[i + 1].startsWith('--') ? arr[i + 1] : true]);
@@ -22,16 +24,25 @@ const url = args.url || 'http://localhost:3000';
 const out = args.out || 'audit/motion';
 const widths = String(args.widths || '375,1440').split(',').map(Number);
 const themes = String(args.themes || 'dark,light').split(',');
-const themeAttr = args['theme-attr'] || 'data-theme';
+const themeAttr = args['theme-attr'] || 'data-theme'; // use 'class' for next-themes (.dark / .light)
+const margin = Number(args.margin ?? 0); // px beyond the viewport still counted as in view (strict by default)
 fs.mkdirSync(out, { recursive: true });
 
-let pw;
-try { pw = await import('playwright-core'); } catch { try { pw = await import('playwright'); } catch { console.error('Install playwright-core (npm i -D playwright-core).'); process.exit(2); } }
+async function loadPlaywright() {
+  const req = createRequire(path.join(process.cwd(), 'noop.js')); // project cwd: works when the skill lives outside the project
+  for (const name of ['playwright-core', 'playwright']) {
+    try { return await import(name); } catch {}
+    try { return await import(pathToFileURL(req.resolve(name)).href); } catch {}
+  }
+  return null;
+}
+const pw = await loadPlaywright();
+if (!pw) { console.error('playwright-core not found from the script location or the current directory. Install it audit-only (e.g. npm i --no-save playwright-core) and pass --chrome if no Chromium is installed.'); process.exit(2); }
 const chromium = pw.chromium || pw.default?.chromium;
 
 /* ---------- runs inside the page ---------- */
-function auditPage() {
-  const COMPOSITOR = new Set(['opacity', 'transform', 'translate', 'rotate', 'scale', 'filter', 'backdrop-filter']);
+function auditPage(margin = 0) {
+  const COMPOSITOR = new Set(['opacity', 'transform', 'translate', 'rotate', 'scale']); // filter / backdrop-filter animation is NOT treated as cheap
   const vw = innerWidth, vh = innerHeight;
   const sel = (el) => {
     if (!el) return '(none)';
@@ -59,7 +70,7 @@ function auditPage() {
       kind: a.constructor.name, name: a.animationName || a.transitionProperty || '', target: sel(target),
       infinite, duration: t.duration, delay: t.delay, direction: t.direction, easing: t.easing,
       properties: [...props], paintOnly: [...props].filter((p) => !COMPOSITOR.has(p)),
-      playState: a.playState, targetInView: target ? inView(target, 80) : false,
+      playState: a.playState, targetInView: target ? inView(target, margin) : false,
     };
   });
   const loops = animations.filter((a) => a.infinite);
@@ -100,6 +111,7 @@ function auditPage() {
 const findings = []; // {level, check, where, detail}
 const add = (level, check, where, detail) => findings.push({ level, check, where, detail });
 const seams = [];
+const themeEvidence = [];
 const browser = await chromium.launch({ executablePath: args.chrome || undefined, args: ['--no-sandbox'] });
 
 for (const width of widths) {
@@ -111,8 +123,14 @@ for (const width of widths) {
     page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
     page.on('pageerror', (e) => errors.push(String(e)));
     await page.goto(url, { waitUntil: 'networkidle' });
-    await page.evaluate(([a, t]) => document.documentElement.setAttribute(a, t), [themeAttr, theme]);
+    await page.evaluate(([a, t]) => {
+      const el = document.documentElement;
+      if (a === 'class') { el.classList.remove('light', 'dark'); el.classList.add(t); } // keep unrelated root classes
+      else el.setAttribute(a, t);
+    }, [themeAttr, theme]);
     await page.waitForTimeout(400);
+    const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    themeEvidence.push({ where, bg });
     const total = await page.evaluate(() => document.documentElement.scrollHeight);
     const vh = page.viewportSize().height;
     let maxInView = 0;
@@ -120,7 +138,7 @@ for (const width of widths) {
     for (let y = 0; y < total; y += Math.round(vh * 0.8)) {
       await page.evaluate((yy) => scrollTo(0, yy), y);
       await page.waitForTimeout(450);
-      const r = await page.evaluate(auditPage);
+      const r = await page.evaluate(auditPage, margin);
       maxInView = Math.max(maxInView, r.runningLoopsInView);
       if (r.overflowX) add('FAIL', 'OVERFLOW_X', where, `scrollWidth ${r.scrollWidth} > viewport at scrollY ${r.scrollY}`);
       r.runningLoopsOffscreen.forEach((a) => add('FAIL', 'LOOP_RUNS_OFFSCREEN', where, `${a.target} (${a.name}) is running while off-screen`));
@@ -153,10 +171,10 @@ for (const width of widths) {
           await page.waitForTimeout(80);
           return page.locator(`[data-seam-id="${l.id}"]`).screenshot();
         };
-        const a = await frame(0), b = await frame(l.duration);
+        const a = await frame(0), b = await frame(l.duration), n = await frame(Math.max(0, l.duration - 16));
         const ha = crypto.createHash('sha1').update(a).digest('hex'), hb = crypto.createHash('sha1').update(b).digest('hex');
         const base = path.join(out, `seam-${width}-${theme}-${l.id}`);
-        fs.writeFileSync(base + '-t0.png', a); fs.writeFileSync(base + '-tPeriod.png', b);
+        fs.writeFileSync(base + '-t0.png', a); fs.writeFileSync(base + '-tPeriod.png', b); fs.writeFileSync(base + '-tNear.png', n); // tNear = one frame before the wrap; compare with t0 to catch a jump hidden by endpoint wrapping
         seams.push({ where, id: l.id, duration: l.duration, identical: ha === hb });
         if (ha !== hb) add('WARN', 'LOOP_SEAM_DIFFERS', where, `${l.id}: frame at t=0 differs from t=period (see ${base}-t*.png); inspect visually, tiny AA differences are OK, a visible jump is not`);
       }
@@ -165,13 +183,19 @@ for (const width of widths) {
   }
 }
 
+if (themes.length > 1) { // prove the theme switch really changed the page (otherwise dark and light would be the same audit twice)
+  for (const w of widths) {
+    const bgs = themes.map((t) => themeEvidence.find((e) => e.where === `${w}px/${t}`)?.bg);
+    if (new Set(bgs).size === 1) add('FAIL', 'THEME_NOT_APPLIED', `${w}px`, `body background identical for ${themes.join('/')} (${bgs[0]}); check --theme-attr (next-themes uses class)`);
+  }
+}
 // Reduced motion: no running infinite loops, nothing hidden
 {
   const ctx = await browser.newContext({ viewport: { width: 375, height: 800 }, reducedMotion: 'reduce' });
   const page = await ctx.newPage();
   await page.goto(url, { waitUntil: 'networkidle' });
   await page.waitForTimeout(500);
-  const r = await page.evaluate(auditPage);
+  const r = await page.evaluate(auditPage, margin);
   const running = r.loops.filter((a) => a.playState === 'running');
   running.forEach((a) => add('FAIL', 'REDUCED_MOTION_LOOP', '375px/reduce', `${a.target} (${a.name}) still loops`));
   r.reveal.filter((e) => e.opacity < 1).forEach((e) => add('FAIL', 'REDUCED_MOTION_HIDDEN', '375px/reduce', `${e.el} opacity ${e.opacity}`));
@@ -191,7 +215,7 @@ await browser.close();
 const fails = findings.filter((f) => f.level === 'FAIL'), warns = findings.filter((f) => f.level === 'WARN');
 const uniq = (arr) => [...new Map(arr.map((f) => [f.level + f.check + f.where + f.detail, f])).values()];
 const f2 = uniq(findings);
-fs.writeFileSync(path.join(out, 'motion-audit.json'), JSON.stringify({ url, widths, themes, findings: f2, seams }, null, 2));
+fs.writeFileSync(path.join(out, 'motion-audit.json'), JSON.stringify({ url, widths, themes, margin, themeEvidence, findings: f2, seams }, null, 2));
 const md = [`# Motion audit`, `URL: ${url}`, `FAIL: ${uniq(fails).length}  WARN: ${uniq(warns).length}`, '',
   ...(f2.length ? ['| Level | Check | Where | Detail |', '|---|---|---|---|', ...f2.map((f) => `| ${f.level} | ${f.check} | ${f.where} | ${f.detail.replace(/\|/g, '/')} |`)] : ['No findings.']),
   '', seams.length ? '## Loop seams\n' + seams.map((s) => `- ${s.where} ${s.id} (${s.duration}ms): ${s.identical ? 'identical frames' : 'frames differ, inspect images'}`).join('\n') : ''].join('\n');

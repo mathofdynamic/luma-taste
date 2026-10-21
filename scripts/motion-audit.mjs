@@ -167,10 +167,21 @@ for (const width of widths) {
       for (const l of loops) {
         await page.evaluate((id) => document.querySelector(`[data-seam-id="${id}"]`).scrollIntoView({ block: 'center' }), l.id);
         await page.waitForTimeout(1000); // settle finite entrance/explainer motion before isolating a loop seam
+        // A moving loop's own bounds change across the wrap. Keep a fixed
+        // crop of its clipping viewport so near-wrap frames show the same place.
+        const clip = await page.evaluate((id) => {
+          let el=document.querySelector(`[data-seam-id="${id}"]`), box=el;
+          for(let p=el.parentElement;p;p=p.parentElement) {
+            const c=getComputedStyle(p);
+            if(/hidden|clip|auto|scroll/.test(c.overflowX+' '+c.overflowY)){box=p;break;}
+          }
+          const r=box.getBoundingClientRect(), x=Math.max(0,r.left), y=Math.max(0,r.top);
+          return {x,y,width:Math.max(1,Math.min(innerWidth,r.right)-x),height:Math.max(1,Math.min(innerHeight,r.bottom)-y)};
+        },l.id);
         const frame = async (t) => {
           await page.evaluate(([id, time]) => document.getAnimations().filter((a) => a.effect?.target?.getAttribute?.('data-seam-id') === id).forEach((a) => { a.pause(); a.currentTime = time; }), [l.id, t]);
           await page.waitForTimeout(80);
-          return page.locator(`[data-seam-id="${l.id}"]`).screenshot();
+          return page.screenshot({clip});
         };
         const a = await frame(0), b = await frame(l.duration), n = await frame(Math.max(0, l.duration - 16));
         const ha = crypto.createHash('sha1').update(a).digest('hex'), hb = crypto.createHash('sha1').update(b).digest('hex');

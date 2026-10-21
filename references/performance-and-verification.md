@@ -65,3 +65,7 @@ Include, in the review README or the final message:
 ## 5. Known limits of the tooling
 
 The audit proves structure and behavior (what runs, when, on which properties, whether loops pause and seam). It does not judge taste or feel, does not measure frame rate on a real phone, and its overlap/grid checks are by overlay and eye. Say so in reports.
+
+### Regression fixtures
+
+`fixtures/correct.html` is a class-themed page with a strictly gated gradient and equal-half duplicated-set marquee. `fixtures/broken.html` plants offscreen looping, clipping, ellipsis, Persian tracking, overflow, no-JS hidden content, and missing class themes. Serve fixtures with a local HTTP server; run the audit from a tooling cwd with playwright-core, `--theme-attr class --seam --widths 375,1440 --themes dark,light --chrome <path>`. Correct must have0FAIL and identical seams; broken must fail every planted category. The checked summary records the executed expectations. Seam capture covers all loops (no six-loop cap). `--margin` rejects negative or non-finite values.

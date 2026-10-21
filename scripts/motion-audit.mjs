@@ -26,6 +26,7 @@ const widths = String(args.widths || '375,1440').split(',').map(Number);
 const themes = String(args.themes || 'dark,light').split(',');
 const themeAttr = args['theme-attr'] || 'data-theme'; // use 'class' for next-themes (.dark / .light)
 const margin = Number(args.margin ?? 0); // px beyond the viewport still counted as in view (strict by default)
+if (!Number.isFinite(margin) || margin < 0) throw new Error('--margin must be a nonnegative finite number');
 fs.mkdirSync(out, { recursive: true });
 
 async function loadPlaywright() {
@@ -163,7 +164,7 @@ for (const width of widths) {
     if (args.seam) {
       await page.evaluate(() => scrollTo(0, 0));
       const loops = await page.evaluate(() => document.getAnimations().filter((a) => a.effect?.getTiming?.().iterations === Infinity).map((a, i) => { const el = a.effect.target; el.setAttribute('data-seam-id', 's' + i); return { id: 's' + i, duration: a.effect.getTiming().duration }; }));
-      for (const l of loops.slice(0, 6)) {
+      for (const l of loops) {
         await page.evaluate((id) => document.querySelector(`[data-seam-id="${id}"]`).scrollIntoView({ block: 'center' }), l.id);
         await page.waitForTimeout(250);
         const frame = async (t) => {

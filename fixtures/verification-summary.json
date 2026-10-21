@@ -1,0 +1,39 @@
+{
+  "correct": {
+    "fails": 0,
+    "warns": 0,
+    "identicalSeams": 8
+  },
+  "broken": {
+    "fails": 30,
+    "expectedChecks": [
+      "LOOP_RUNS_OFFSCREEN",
+      "NO_JS_HIDDEN_CONTENT",
+      "OVERFLOW_X",
+      "PERSIAN_LETTER_SPACING",
+      "TEXT_CLIPPED",
+      "TEXT_TRUNCATED",
+      "THEME_NOT_APPLIED"
+    ],
+    "detectedChecks": [
+      "LOOP_RUNS_OFFSCREEN",
+      "NO_JS_HIDDEN_CONTENT",
+      "OVERFLOW_X",
+      "PERSIAN_LETTER_SPACING",
+      "REDUCED_MOTION_HIDDEN",
+      "TEXT_CLIPPED",
+      "TEXT_TRUNCATED",
+      "THEME_NOT_APPLIED"
+    ]
+  },
+  "browser": "installed Google Chrome, headless",
+  "widths": [
+    375,
+    1440
+  ],
+  "themes": [
+    "dark",
+    "light"
+  ],
+  "themeAttr": "class"
+}

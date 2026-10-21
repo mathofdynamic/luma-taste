@@ -170,8 +170,10 @@ for (const width of widths) {
         // A moving loop's own bounds change across the wrap. Keep a fixed
         // crop of its clipping viewport so near-wrap frames show the same place.
         const clip = await page.evaluate((id) => {
-          let el=document.querySelector(`[data-seam-id="${id}"]`), box=el;
-          for(let p=el.parentElement;p;p=p.parentElement) {
+          document.getAnimations().filter(a=>a.effect?.getTiming().iterations===Infinity).forEach(a=>a.pause());
+          let el=document.querySelector(`[data-seam-id="${id}"]`), box=el.ownerSVGElement || el;
+          const moving=el.getBoundingClientRect().width>innerWidth;
+          for(let p=moving?el.parentElement:null;p;p=p.parentElement) {
             const c=getComputedStyle(p);
             if(/hidden|clip|auto|scroll/.test(c.overflowX+' '+c.overflowY)){box=p;break;}
           }

@@ -166,7 +166,7 @@ for (const width of widths) {
       const loops = await page.evaluate(() => document.getAnimations().filter((a) => a.effect?.getTiming?.().iterations === Infinity).map((a, i) => { const el = a.effect.target; el.setAttribute('data-seam-id', 's' + i); return { id: 's' + i, duration: a.effect.getTiming().duration }; }));
       for (const l of loops) {
         await page.evaluate((id) => document.querySelector(`[data-seam-id="${id}"]`).scrollIntoView({ block: 'center' }), l.id);
-        await page.waitForTimeout(250);
+        await page.waitForTimeout(1000); // settle finite entrance/explainer motion before isolating a loop seam
         const frame = async (t) => {
           await page.evaluate(([id, time]) => document.getAnimations().filter((a) => a.effect?.target?.getAttribute?.('data-seam-id') === id).forEach((a) => { a.pause(); a.currentTime = time; }), [l.id, t]);
           await page.waitForTimeout(80);
@@ -206,7 +206,8 @@ if (themes.length > 1) { // prove the theme switch really changed the page (othe
 {
   const ctx = await browser.newContext({ viewport: { width: 375, height: 800 }, javaScriptEnabled: false });
   const page = await ctx.newPage();
-  await page.goto(url, { waitUntil: 'load' });
+  await page.goto(url, { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => document.fonts.ready); // CSS/font readiness, without waiting forever for unrelated remote images
   const hidden = await page.evaluate(() => [...document.querySelectorAll('[data-reveal]')].filter((el) => +getComputedStyle(el).opacity < 1).length);
   if (hidden) add('FAIL', 'NO_JS_HIDDEN_CONTENT', 'js-disabled', `${hidden} [data-reveal] elements are invisible without JavaScript`);
   await ctx.close();

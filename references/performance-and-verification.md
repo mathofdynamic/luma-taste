@@ -69,3 +69,5 @@ The audit proves structure and behavior (what runs, when, on which properties, w
 ### Regression fixtures
 
 `fixtures/correct.html` is a class-themed page with a strictly gated gradient and equal-half duplicated-set marquee. `fixtures/broken.html` plants offscreen looping, clipping, ellipsis, Persian tracking, overflow, no-JS hidden content, and missing class themes. Serve fixtures with a local HTTP server; run the audit from a tooling cwd with playwright-core, `--theme-attr class --seam --widths 375,1440 --themes dark,light --chrome <path>`. Correct must have0FAIL and identical seams; broken must fail every planted category. The checked summary records the executed expectations. Seam capture covers all loops (no six-loop cap). `--margin` rejects negative or non-finite values.
+
+No-JS visibility waits for DOM and fonts, not the load event (a stalled external image must not prevent inspecting readable SSR content). Seam capture settles finite entrance/explainer effects for1000ms before sampling the isolated loop so parent opacity is not mistaken for a loop discontinuity.

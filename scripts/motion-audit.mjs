@@ -4,10 +4,13 @@
  *
  *   npm i -D playwright-core   (or playwright)   # browser: set --chrome to a Chromium/Chrome executable if none is installed
  *   node .agents/skills/luma-taste/scripts/motion-audit.mjs --url http://localhost:3000 --out audit/motion \
- *        [--widths 375,1440] [--themes dark,light] [--chrome /path/to/chrome] [--theme-attr data-theme|class] [--margin 0] [--seam]
+ *        [--widths 375,1440] [--themes dark,light] [--chrome /path/to/chrome] [--theme-attr data-theme|class] [--margin 0]
+ *        [--enter-ms 600] [--seam]
  *
  * Checks (exit code 1 if any FAIL): loops running off-screen, clipped/ellipsized text, horizontal overflow,
- * text < 12px, letter-spacing on Persian text, reduced-motion behavior, no-JS visibility, entrance-contract drift.
+ * text < 12px, letter-spacing on Persian text, reduced-motion behavior, no-JS visibility, entrance timing
+ * (Luma: about 600ms; under 400ms fails), premature reveals (below-the-fold content already visible at load,
+ * which means either everything animated at load or the later reveal will blink).
  * Writes <out>/motion-audit.json and <out>/motion-audit.md, plus seam frames with --seam.
  */
 import fs from 'node:fs';
@@ -27,6 +30,7 @@ const themes = String(args.themes || 'dark,light').split(',');
 const themeAttr = args['theme-attr'] || 'data-theme'; // use 'class' for next-themes (.dark / .light)
 const margin = Number(args.margin ?? 0); // px beyond the viewport still counted as in view (strict by default)
 if (!Number.isFinite(margin) || margin < 0) throw new Error('--margin must be a nonnegative finite number');
+const enterMs = Number(args['enter-ms'] ?? 600); // Luma entrance duration (motion-system.md section 4)
 fs.mkdirSync(out, { recursive: true });
 
 async function loadPlaywright() {
@@ -97,8 +101,10 @@ function auditPage(margin = 0) {
     return b && b !== 'none';
   }).map((el) => { const r = el.getBoundingClientRect(); return { el: sel(el), area: Math.round(r.width * r.height), filter: getComputedStyle(el).backdropFilter }; });
   const reveal = [...document.querySelectorAll('[data-reveal]')].map((el) => {
-    const cs = getComputedStyle(el);
-    return { el: sel(el), revealed: el.getAttribute('data-revealed') === 'true', opacity: +cs.opacity, td: cs.transitionDuration, tdel: cs.transitionDelay, tf: cs.transform };
+    const cs = getComputedStyle(el); const r = el.getBoundingClientRect();
+    const td = cs.transitionDuration.split(',').map((v) => parseFloat(v) * (v.trim().endsWith('ms') ? 1 : 1000));
+    return { el: sel(el), revealed: el.getAttribute('data-revealed') === 'true', opacity: +cs.opacity, td: cs.transitionDuration, tdMax: Math.max(0, ...td), tdel: cs.transitionDelay, tf: cs.transform,
+      belowFold: r.top >= vh + margin, rendered: r.width > 0 && r.height > 0 && cs.display !== 'none' && cs.visibility !== 'hidden' };
   });
   return {
     viewport: [vw, vh], scrollY: Math.round(scrollY),
@@ -138,8 +144,10 @@ for (const width of widths) {
     const seenText = new Map();
     for (let y = 0; y < total; y += Math.round(vh * 0.8)) {
       await page.evaluate((yy) => scrollTo(0, yy), y);
-      await page.waitForTimeout(450);
+      await page.waitForTimeout(y === 0 ? 50 : 900); // 900ms: let a 600ms reveal (plus stagger) finish before measuring
       const r = await page.evaluate(auditPage, margin);
+      if (y === 0) r.reveal.filter((e) => e.belowFold && e.rendered && e.opacity >= 0.99).forEach((e) => add('FAIL', 'PREMATURE_REVEAL', where,
+        `${e.el} is below the fold but already visible at load (reveal on scroll; stage it hidden before it enters, or the reveal will blink)`));
       maxInView = Math.max(maxInView, r.runningLoopsInView);
       if (r.overflowX) add('FAIL', 'OVERFLOW_X', where, `scrollWidth ${r.scrollWidth} > viewport at scrollY ${r.scrollY}`);
       r.runningLoopsOffscreen.forEach((a) => add('FAIL', 'LOOP_RUNS_OFFSCREEN', where, `${a.target} (${a.name}) is running while off-screen`));
@@ -152,9 +160,9 @@ for (const width of widths) {
         if (t.persianTracking) add('FAIL', 'PERSIAN_LETTER_SPACING', where, `${t.el} "${t.sample}"`);
       });
       r.reveal.forEach((e) => {
-        if (!e.revealed) return;
-        const d = parseFloat(e.td) * (e.td.endsWith('ms') ? 1 : 1000);
-        if (e.td && Math.abs(d - 100) > 1 && d !== 0) add('WARN', 'ENTRANCE_DURATION_DRIFT', where, `${e.el} transition ${e.td} (contract: 100ms)`);
+        if (!e.revealed || !e.tdMax) return;
+        if (e.tdMax < 400) add('FAIL', 'ENTRANCE_TOO_FAST', where, `${e.el} reveals in ${e.td} (Luma reveals are about ${enterMs}ms; the owner rejected 100ms)`);
+        else if (Math.abs(e.tdMax - enterMs) > 100) add('WARN', 'ENTRANCE_DURATION_DRIFT', where, `${e.el} transition ${e.td} (Luma: ${enterMs}ms)`);
       });
       if (r.glass.length && width < 600) r.glass.forEach((g) => g.area > 375 * 800 * 0.6 && add('WARN', 'LARGE_BACKDROP_BLUR', where, `${g.el} ${g.area}px² (keep blur on small fixed layers)`));
     }
@@ -230,7 +238,7 @@ await browser.close();
 const fails = findings.filter((f) => f.level === 'FAIL'), warns = findings.filter((f) => f.level === 'WARN');
 const uniq = (arr) => [...new Map(arr.map((f) => [f.level + f.check + f.where + f.detail, f])).values()];
 const f2 = uniq(findings);
-fs.writeFileSync(path.join(out, 'motion-audit.json'), JSON.stringify({ url, widths, themes, margin, themeEvidence, findings: f2, seams }, null, 2));
+fs.writeFileSync(path.join(out, 'motion-audit.json'), JSON.stringify({ url, widths, themes, margin, enterMs, themeEvidence, findings: f2, seams }, null, 2));
 const md = [`# Motion audit`, `URL: ${url}`, `FAIL: ${uniq(fails).length}  WARN: ${uniq(warns).length}`, '',
   ...(f2.length ? ['| Level | Check | Where | Detail |', '|---|---|---|---|', ...f2.map((f) => `| ${f.level} | ${f.check} | ${f.where} | ${f.detail.replace(/\|/g, '/')} |`)] : ['No findings.']),
   '', seams.length ? '## Loop seams\n' + seams.map((s) => `- ${s.where} ${s.id} (${s.duration}ms): ${s.identical ? 'identical frames' : 'frames differ, inspect images'}`).join('\n') : ''].join('\n');

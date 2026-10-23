@@ -31,6 +31,8 @@ Luma Taste guides page work toward LUMA's dark, premium visual identity, express
 
 ## What it covers
 
+- The owner's review log: every pattern the owner rejected on a real page, the rule it became, and a pre-delivery checklist
+- Signature interaction recipes: morphing hover-intent menus, circular theme switch, liquid-fill buttons, the multi-tool hero studio, pointer-following comparisons, skeleton-to-reveal media, explainer stories, the lens testimonial marquee, and the standout mobile menu
 - LUMA color, typography, shape, material, and Persian RTL rules
 - A shared 12-column layout grid and component guidance that prevents clipped copy
 - Motion patterns for entrances, hover interactions, scroll moments, marquees, and transient surfaces
@@ -104,7 +106,7 @@ Use `--chrome <path>` when Playwright cannot find a Chromium executable, and `--
 | Path | Purpose |
 | --- | --- |
 | [`SKILL.md`](SKILL.md) | Invocation, workflow, design standards, and reference map |
-| [`references/`](references/) | Identity, layout, motion, entrance, process, and verification guidance |
+| [`references/`](references/) | Owner review log, signature patterns, identity, layout, motion, entrance, process, and verification guidance |
 | [`assets/`](assets/) | Starter design files and README artwork |
 | [`assets/readme/`](assets/readme/) | Original 3D visuals for this README |
 | [`scripts/motion-audit.mjs`](scripts/motion-audit.mjs) | Browser audit for motion and layout regressions |

@@ -1,12 +1,18 @@
 /* Luma motion layer. Compositor-friendly properties only (opacity, transform) except the gradient-word
    background-position, which is paint-only and therefore gated to run ONLY while in view. */
 :root {
-  /* Entrance contract (see references/entrance-motion-contract.md): do not change without a documented reason */
-  --lm-dur: 100ms;
-  --lm-lead: calc(var(--lm-dur) / 3);
+  /* Luma timing tokens (references/motion-system.md section 4). Owner review 01 rejected 100ms reveals. */
+  --lm-enter-dur: 600ms;
+  --lm-enter-stagger: 70ms;
+  --lm-enter-rise: 24px;
+  --lm-surface-dur: 240ms;
+  --lm-surface-item-dur: 200ms;
+  --lm-surface-item-lead: 30ms;
+  --lm-sheet-dur: 320ms;
+  --lm-scrim-dur: 240ms;
+  --lm-morph-dur: 320ms;
   --lm-ease-out: cubic-bezier(.16, 1, .3, 1);
-  --lm-rise: 20px;
-  --lm-close-dur: 66ms;
+  --lm-close-dur: 160ms;
   --lm-close-rise: 8px;
   --lm-ease-close: cubic-bezier(.4, 0, 1, 1);
 
@@ -17,24 +23,32 @@
   --lm-press-dur: 120ms;
 }
 
-/* ---------- 1. Entrance (hidden ONLY after JS confirms motion is on) ---------- */
-.lm-motion [data-reveal]:not([data-motion-ignore], [data-motion-ignore] *) {
+/* ---------- 1. Entrance (scroll-driven, per element) ----------
+   The runtime marks every [data-reveal] element that is BELOW the viewport at boot with data-revealed="false"
+   (staged hidden), and elements already on screen with data-revealed="true" (no animation, so nothing blinks).
+   Without JS no element carries data-revealed="false", so everything is visible. */
+.lm-motion [data-reveal][data-revealed="false"]:not([data-motion-ignore], [data-motion-ignore] *) {
   opacity: 0;
-  transform: translate3d(0, var(--lm-rise), 0);
+  transform: translate3d(0, var(--lm-enter-rise), 0);
 }
 .lm-motion [data-reveal][data-revealed="true"] {
   opacity: 1;
   transform: translate3d(0, 0, 0);
   transition:
-    opacity var(--lm-dur) var(--lm-ease-out) calc(var(--lm-i, 0) * var(--lm-lead)),
-    transform var(--lm-dur) var(--lm-ease-out) calc(var(--lm-i, 0) * var(--lm-lead));
+    opacity var(--lm-enter-dur) var(--lm-ease-out) calc(var(--lm-i, 0) * var(--lm-enter-stagger)),
+    transform var(--lm-enter-dur) var(--lm-ease-out) calc(var(--lm-i, 0) * var(--lm-enter-stagger));
 }
+/* Above-the-fold load sequence: CSS only, never gated on JS. Give children --lm-i for the stagger. */
+.lm-hero-seq > * { animation: lm-hero-in 700ms var(--lm-ease-out) both; animation-delay: calc(var(--lm-i, 0) * 90ms); }
+.lm-hero-seq > h1 { animation-name: lm-hero-rise; } /* LCP element: transform only, opacity stays 1 */
+@keyframes lm-hero-in { from { opacity: 0; transform: translate3d(0, var(--lm-enter-rise), 0); } }
+@keyframes lm-hero-rise { from { transform: translate3d(0, var(--lm-enter-rise), 0); } }
 
 /* ---------- 2. Transient surfaces: menus, popovers, dialogs, drawers, lightbox ---------- */
 .lm-surface { will-change: auto; }
 .lm-surface[data-state="closed"] {
   opacity: 0;
-  transform: translate3d(0, var(--lm-rise), 0);
+  transform: translate3d(0, 8px, 0);
   visibility: hidden;
   pointer-events: none;
   transition: none;
@@ -44,8 +58,8 @@
   transform: translate3d(0, 0, 0);
   visibility: visible;
   transition:
-    opacity var(--lm-dur) var(--lm-ease-out),
-    transform var(--lm-dur) var(--lm-ease-out);
+    opacity var(--lm-surface-dur) var(--lm-ease-out),
+    transform var(--lm-surface-dur) var(--lm-ease-out);
 }
 .lm-surface[data-state="closing"] {
   opacity: 0;
@@ -59,11 +73,11 @@
 /* Backdrops animate opacity only (never translate with the panel) */
 .lm-scrim { background: var(--scrim-bg); -webkit-backdrop-filter: blur(var(--scrim-blur)); backdrop-filter: blur(var(--scrim-blur)); }
 .lm-scrim[data-state="closed"] { opacity: 0; visibility: hidden; pointer-events: none; transition: none; }
-.lm-scrim[data-state="open"] { opacity: 1; visibility: visible; transition: opacity var(--lm-dur) var(--lm-ease-out); }
+.lm-scrim[data-state="open"] { opacity: 1; visibility: visible; transition: opacity var(--lm-scrim-dur) var(--lm-ease-out); }
 .lm-scrim[data-state="closing"] { opacity: 0; visibility: visible; pointer-events: none; transition: opacity var(--lm-close-dur) var(--lm-ease-close); }
 /* Items inside an open surface use the same cadence */
-.lm-surface[data-state="open"] > [data-surface-item] { animation: lm-item-in var(--lm-dur) var(--lm-ease-out) both; animation-delay: calc(var(--lm-i, 0) * var(--lm-lead)); }
-@keyframes lm-item-in { from { opacity: 0; transform: translate3d(0, var(--lm-rise), 0); } }
+.lm-surface[data-state="open"] [data-surface-item] { animation: lm-item-in var(--lm-surface-item-dur) var(--lm-ease-out) both; animation-delay: calc(60ms + var(--lm-i, 0) * var(--lm-surface-item-lead)); }
+@keyframes lm-item-in { from { opacity: 0; transform: translate3d(0, 8px, 0); } }
 
 /* ---------- Materials: blur + LOW opacity ---------- */
 .lm-glass {
@@ -72,6 +86,15 @@
   backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
   border: 1px solid var(--glass-border);
 }
+/* Strong glass for dropdowns/popovers and the mobile sheet (identity-and-tokens.md, material levels) */
+.lm-glass-strong {
+  background: color-mix(in srgb, var(--surface-1) 68%, transparent);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  backdrop-filter: blur(24px) saturate(1.6);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 24px 64px -24px rgb(0 0 0 / .55);
+}
+.lm-glass-sheet { background: color-mix(in srgb, var(--surface-1) 82%, transparent); -webkit-backdrop-filter: blur(24px) saturate(1.6); backdrop-filter: blur(24px) saturate(1.6); }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .lm-glass { background: color-mix(in srgb, var(--bg) 92%, transparent); }
   .lm-scrim { background: color-mix(in srgb, #000 70%, transparent); }
@@ -135,9 +158,10 @@
 
 /* ---------- Reduced motion: reveal immediately, no translation, no stagger, no loops ---------- */
 @media (prefers-reduced-motion: reduce) {
-  .lm-motion [data-reveal], .lm-motion [data-reveal][data-revealed="true"] { opacity: 1; transform: none; transition: none; }
+  .lm-motion [data-reveal], .lm-motion [data-reveal][data-revealed] { opacity: 1; transform: none; transition: none; }
+  .lm-hero-seq > * { animation: none; }
   .lm-surface[data-state="open"], .lm-surface[data-state="closing"] { transition: opacity 60ms linear; transform: none; }
-  .lm-surface[data-state="open"] > [data-surface-item] { animation: none; }
+  .lm-surface[data-state="open"] [data-surface-item] { animation: none; }
   .lm-gradient-word { animation: none; background-position: 0 center; }
   .lm-marquee { overflow-x: auto; -webkit-mask-image: none; mask-image: none; }
   .lm-marquee__track { animation: none; }

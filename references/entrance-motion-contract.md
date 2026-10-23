@@ -2,9 +2,11 @@
 
 This is a bundled copy of the owner's open-source `entrance-motion` skill (MIT, github.com/mathofdynamic/entrance-motion-skill), included so Luma Taste is self-contained in environments where that skill is not installed. If the project has `$entrance-motion` installed, treat both as the same contract; the repository version wins on any difference.
 
+> **Luma timing override (owner review 01, 2026-10-22).** The owner reviewed 100ms entrances on the home page and rejected them as too fast and glitchy. On Luma, use the timing tokens in `motion-system.md` section 4 (content reveal 600ms with 70ms stagger, per element as it scrolls in; surfaces 240ms; sheets/dialogs 320ms; close 160ms). Everything else in this contract still applies: progressive enhancement, no hidden content without JS, once-only reveals in DOM order, surface state handling, focus return, reduced motion. Where this file says 100ms, 33ms or 66ms, read the Luma tokens.
+
 Luma applies this contract to **every page and every surface that pops open**. Luma-specific additions (what to use for hover, scroll and loop motion) live in `motion-system.md`; this contract governs entrance and open/close only, and its "Boundaries" section describes the scope of THIS contract, not of the whole site's motion.
 
-Reference implementation in this skill: `assets/luma-motion.css` (reveal and surface states) and `assets/luma-motion.js` (`initLumaMotion`, `setSurfaceState`), verified for: 100ms duration, 33.3ms lead per item, once-only reveal per section, items indexed in DOM order, `data-motion-ignore` opt-out, 66ms compact close, reopen during close, and visibility with JavaScript off.
+Reference implementation in this skill: `assets/luma-motion.css` (reveal and surface states) and `assets/luma-motion.js` (`initLumaMotion`, `setSurfaceState`), implementing the Luma tokens: 600ms reveal, 70ms stagger, per-element scroll trigger with pre-staged hidden state, once-only reveal, items indexed in DOM order, `data-motion-ignore` opt-out, 160ms compact close, reopen during close, and visibility with JavaScript off.
 
 ---
 

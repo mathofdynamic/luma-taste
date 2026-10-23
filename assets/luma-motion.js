@@ -2,13 +2,17 @@
  * Luma motion runtime (framework-agnostic ES module, ~2 KB gzip). Adapt to the host project's architecture;
  * do NOT create a second competing reveal system if the project already has one.
  *
- *  - Entrance: [data-reveal-section] is the trigger boundary; its [data-reveal] children reveal once, in DOM order,
- *    each starting after duration/3 of the previous (CSS reads --lm-i). Elements with [data-motion-ignore] are skipped.
+ *  - Entrance (Luma timing, motion-system.md section 4): every [data-reveal] element reveals once when IT scrolls
+ *    into view (15% visible, bottom root margin -10%). Elements already on screen when the runtime boots are
+ *    marked revealed without animation; only elements below the viewport are staged hidden (data-revealed="false"),
+ *    so a reveal never blinks (visible -> hidden -> animated). Entries arriving together reveal in DOM order with
+ *    a 70ms stagger (CSS reads --lm-i, capped at 6). [data-motion-ignore] opts out.
  *  - Loops: any [data-loop] gets data-in-view="true|false" so CSS runs the loop only while visible.
- *  - Surfaces: setSurfaceState(el, 'open' | 'closed') with a 66ms compact close and a bounded fallback timer.
- *  - Progressive: content is visible without JS. Hidden initial styles apply only after .lm-motion is added here.
+ *  - Surfaces: setSurfaceState(el, 'open' | 'closed') with a 160ms compact close and a bounded fallback timer.
+ *  - Progressive: content is visible without JS. Hidden initial styles apply only to elements this runtime staged.
  */
 const REDUCED = '(prefers-reduced-motion: reduce)';
+const MAX_STAGGER_INDEX = 6;
 
 export function initLumaMotion(root = document) {
   const doc = root.ownerDocument || document;
@@ -16,23 +20,12 @@ export function initLumaMotion(root = document) {
   const mq = window.matchMedia ? window.matchMedia(REDUCED) : { matches: false, addEventListener() {}, removeEventListener() {} };
   const cleanups = [];
 
-  const revealed = new WeakSet();
-  const items = (section) =>
-    [...section.querySelectorAll('[data-reveal]')].filter((el) => !el.closest('[data-motion-ignore]'));
-
-  const revealSection = (section) => {
-    if (revealed.has(section)) return;
-    revealed.add(section);
-    const list = section.hasAttribute('data-reveal') ? [section, ...items(section)] : items(section);
-    list.forEach((el, i) => {
-      el.style.setProperty('--lm-i', String(i));
-      el.setAttribute('data-revealed', 'true');
-    });
+  const targets = () => [...root.querySelectorAll('[data-reveal]')].filter((el) => !el.closest('[data-motion-ignore]'));
+  const reveal = (el, i = 0) => {
+    el.style.setProperty('--lm-i', String(Math.min(i, MAX_STAGGER_INDEX)));
+    el.setAttribute('data-revealed', 'true');
   };
-  const revealAll = () => root.querySelectorAll('[data-reveal-section], [data-reveal]').forEach((el) => {
-    if (el.hasAttribute('data-reveal')) el.setAttribute('data-revealed', 'true');
-    else revealSection(el);
-  });
+  const revealAll = () => targets().forEach((el) => { el.style.removeProperty('--lm-i'); el.setAttribute('data-revealed', 'true'); });
 
   // Loop gating: runs for reduced-motion users too, harmless (CSS disables the loops themselves).
   let loopIO = null;
@@ -50,26 +43,30 @@ export function initLumaMotion(root = document) {
     return () => cleanups.forEach((fn) => fn());
   }
 
+  // Stage: on-screen elements stay visible (no animation), below-the-fold elements are hidden until they enter.
+  const vh = window.innerHeight;
+  const staged = [];
+  targets().forEach((el) => {
+    if (el.hasAttribute('data-revealed')) return;
+    const r = el.getBoundingClientRect();
+    if (r.top < vh && r.bottom > 0) el.setAttribute('data-revealed', 'true');
+    else { el.setAttribute('data-revealed', 'false'); staged.push(el); }
+  });
   html.classList.add('lm-motion');
-  const safety = window.setTimeout(revealAll, 2500); // never leave content hidden if setup stalls
-  cleanups.push(() => window.clearTimeout(safety));
 
-  const units = [...root.querySelectorAll('[data-reveal-section]')];
-  // standalone [data-reveal] elements outside any section are their own boundary
-  const loose = [...root.querySelectorAll('[data-reveal]')].filter((el) => !el.closest('[data-reveal-section]') && !el.closest('[data-motion-ignore]'));
   const io = new IntersectionObserver(
     (entries) => {
       const hits = entries.filter((e) => e.isIntersecting).map((e) => e.target);
       hits.sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1)); // DOM order, not callback order
-      hits.forEach((el) => { io.unobserve(el); revealSection(el); });
+      hits.forEach((el, i) => { io.unobserve(el); reveal(el, i); });
     },
-    { threshold: 0.12, rootMargin: '0px 0px -6% 0px' }
+    { threshold: 0.15, rootMargin: '0px 0px -10% 0px' }
   );
-  // double rAF: let the first paint settle before observing, so the first reveal is visible and flash-free
-  const raf = requestAnimationFrame(() => requestAnimationFrame(() => {
-    units.concat(loose).forEach((el) => io.observe(el));
-  }));
-  cleanups.push(() => { cancelAnimationFrame(raf); io.disconnect(); });
+  staged.forEach((el) => io.observe(el));
+  cleanups.push(() => io.disconnect());
+
+  // Elements scrolled past without ever intersecting (anchor jumps) reveal when the user scrolls back; nothing
+  // is permanently hidden because the observer keeps watching them until they intersect.
 
   const onChange = () => { if (mq.matches) { revealAll(); html.classList.remove('lm-motion'); } };
   mq.addEventListener && mq.addEventListener('change', onChange);
@@ -79,7 +76,7 @@ export function initLumaMotion(root = document) {
 }
 
 const surfaceTimers = new WeakMap();
-/** state: 'open' | 'closed'. Closing animates 66ms, then settles to 'closed'. Reopening during close cancels the timer. */
+/** state: 'open' | 'closed'. Closing animates 160ms, then settles to 'closed'. Reopening during close cancels the timer. */
 export function setSurfaceState(el, state, { onClosed } = {}) {
   window.clearTimeout(surfaceTimers.get(el));
   if (state === 'open') {
@@ -93,5 +90,5 @@ export function setSurfaceState(el, state, { onClosed } = {}) {
   el.setAttribute('inert', ''); el.setAttribute('aria-hidden', 'true');
   const done = () => { el.dataset.state = 'closed'; onClosed && onClosed(); };
   const reduced = window.matchMedia && window.matchMedia(REDUCED).matches;
-  surfaceTimers.set(el, window.setTimeout(done, reduced ? 60 : 66 + 34)); // bounded fallback; never rely on transitionend alone
+  surfaceTimers.set(el, window.setTimeout(done, reduced ? 60 : 160 + 40)); // bounded fallback; never rely on transitionend alone
 }

@@ -14,7 +14,7 @@ Luma's visual direction is **pinned** by the brand (dark, gradient, Persian, pre
 | Generic-design warning | Luma decision |
 |---|---|
 | Accenting a single word in a headline is a tell | **Keep.** The animated gradient word is a Luma signature. Execute it well: one word, meaningful, never on every heading line |
-| Fade-and-rise entrances on every section read as generated | **Keep, with the contract.** Entrance motion is mandated; make it precise (100ms, 33ms lead) so it feels engineered, not decorative |
+| Fade-and-rise entrances on every section read as generated | **Keep, with Luma timing.** Entrance motion is mandated; make it calm and scroll-driven (600ms, 70ms stagger, per element as it enters) so it feels intentional, not decorative. The owner rejected 100ms reveals as invisible and glitchy |
 | Near-black plus a bright accent is common | **Keep.** It is the brand; differentiate through the gradient, the product visuals, and the motion |
 | Hover transitions on every card are generic | **Keep, but make each hover specific** to the card (icon story), not a generic lift |
 | SaaS card kit (identical cards) | Vary scale and hierarchy: hero visual large, services in a tight grid, bento with different card sizes, testimonials as a moving band |

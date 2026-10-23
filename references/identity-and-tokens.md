@@ -58,6 +58,16 @@ Scale (fluid, via `clamp()`): display 34 to 60px/600, h2 26 to 40px/500, h3 18 t
 - Radii: pill for buttons/chips/tabs; cards 20px (16 on mobile); large bento 24px; media 16px; inputs 12px.
 - Depth is a 1px hairline plus one surface step, not stacked shadows. Only the inset top-light `0 1px 0 rgb(255 255 255 / .04) inset` is allowed.
 - **Blur surfaces = blur + low opacity** (`.lm-glass`: about 55% opacity background, `blur(16px) saturate(1.4)`, 1px translucent border). Lightbox and modal backdrop (`.lm-scrim`): about 45% black with `blur(10px)`. Use on small fixed layers (header, menus, popovers, lightbox). Never stack a light translucent surface on another. Text over glass: higher contrast than normal and no flat gray.
+- **Material levels (owner review 01: the dropdown blur was too weak, the mobile menu blended into the page):**
+
+  | Level | Background | Blur | Use |
+  |---|---|---|---|
+  | Thin | `--bg` 55-60% | `blur(16px) saturate(1.4)` | header bar |
+  | Strong | `--surface-1` 68% | `blur(24px) saturate(1.6)` + `0 24px 64px -24px rgb(0 0 0 / .55)` | dropdowns, popovers |
+  | Sheet | `--surface-1` 82% | `blur(24px) saturate(1.6)` over a scrim of `rgb(0 0 0 / .5)` + `blur(4px)` | mobile menu, dialogs |
+  | Scrim (lightbox) | 45% black | `blur(10px)` | lightbox, modal backdrops |
+
+  Light theme uses the same opacities on the light surfaces with a softer shadow (`rgb(20 16 30 / .18)`).
 - A bigger surface reads as thicker: more blur and a deeper shadow than a chip.
 - Materialize: surfaces animate scale/opacity (and optionally blur radius) together on enter, rather than a plain fade, when the cost is acceptable.
 - Provide a fallback for browsers without `backdrop-filter` (higher-opacity solid), included in `luma-motion.css`.

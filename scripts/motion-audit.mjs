@@ -45,6 +45,36 @@ const pw = await loadPlaywright();
 if (!pw) { console.error('playwright-core not found from the script location or the current directory. Install it audit-only (e.g. npm i --no-save playwright-core) and pass --chrome if no Chromium is installed.'); process.exit(2); }
 const chromium = pw.chromium || pw.default?.chromium;
 
+/* ---------- injected before any page script: records the motion that actually reveals [data-reveal] elements ---------- */
+function revealRecorder() {
+  const log = (window.__lmRevealLog = []);
+  const name = (el) => (el.id ? '#' + el.id : el.tagName.toLowerCase() + (el.classList[0] ? '.' + el.classList[0] : ''));
+  const keep = (el, props, ms) => {
+    if (!(el instanceof Element) || !el.hasAttribute('data-reveal')) return;
+    if (!props.some((p) => p === 'opacity' || p === 'transform' || p === 'translate' || p === 'all')) return;
+    log.push({ el: name(el), ms, props });
+  };
+  const animate = Element.prototype.animate;
+  Element.prototype.animate = function (keyframes, options) {
+    const a = animate.call(this, keyframes, options);
+    try {
+      const props = new Set();
+      a.effect.getKeyframes().forEach((k) => Object.keys(k).forEach((p) => { if (!['offset', 'easing', 'composite', 'computedOffset'].includes(p)) props.add(p); }));
+      keep(this, [...props], a.effect.getTiming().duration);
+    } catch {}
+    return a;
+  };
+  const durationOf = (el, prop) => {
+    const cs = getComputedStyle(el);
+    const names = cs.transitionProperty.split(','), durs = cs.transitionDuration.split(',');
+    const i = names.findIndex((n) => n.trim() === prop || n.trim() === 'all');
+    const d = durs[(i < 0 ? 0 : i) % durs.length].trim();
+    return parseFloat(d) * (d.endsWith('ms') ? 1 : 1000);
+  };
+  addEventListener('transitionrun', (e) => keep(e.target, [e.propertyName], durationOf(e.target, e.propertyName)), true);
+  addEventListener('animationstart', (e) => { const cs = getComputedStyle(e.target); const d = cs.animationDuration.split(',')[0].trim(); keep(e.target, ['opacity', 'transform'], parseFloat(d) * (d.endsWith('ms') ? 1 : 1000)); }, true);
+}
+
 /* ---------- runs inside the page ---------- */
 function auditPage(margin = 0) {
   const COMPOSITOR = new Set(['opacity', 'transform', 'translate', 'rotate', 'scale']); // filter / backdrop-filter animation is NOT treated as cheap
@@ -102,8 +132,7 @@ function auditPage(margin = 0) {
   }).map((el) => { const r = el.getBoundingClientRect(); return { el: sel(el), area: Math.round(r.width * r.height), filter: getComputedStyle(el).backdropFilter }; });
   const reveal = [...document.querySelectorAll('[data-reveal]')].map((el) => {
     const cs = getComputedStyle(el); const r = el.getBoundingClientRect();
-    const td = cs.transitionDuration.split(',').map((v) => parseFloat(v) * (v.trim().endsWith('ms') ? 1 : 1000));
-    return { el: sel(el), revealed: el.getAttribute('data-revealed') === 'true', opacity: +cs.opacity, td: cs.transitionDuration, tdMax: Math.max(0, ...td), tdel: cs.transitionDelay, tf: cs.transform,
+    return { el: sel(el), revealed: el.getAttribute('data-revealed') === 'true', opacity: +cs.opacity, td: cs.transitionDuration, tdel: cs.transitionDelay, tf: cs.transform,
       belowFold: r.top >= vh + margin, rendered: r.width > 0 && r.height > 0 && cs.display !== 'none' && cs.visibility !== 'hidden' };
   });
   return {
@@ -125,6 +154,7 @@ for (const width of widths) {
   for (const theme of themes) {
     const where = `${width}px/${theme}`;
     const ctx = await browser.newContext({ viewport: { width, height: width < 600 ? 800 : 900 }, deviceScaleFactor: 1 });
+    await ctx.addInitScript(revealRecorder);
     const page = await ctx.newPage();
     const errors = [];
     page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
@@ -159,10 +189,11 @@ for (const width of widths) {
         if (t.small) add('FAIL', 'TEXT_TOO_SMALL', where, `${t.el} ${t.fs}px "${t.sample}"`);
         if (t.persianTracking) add('FAIL', 'PERSIAN_LETTER_SPACING', where, `${t.el} "${t.sample}"`);
       });
-      r.reveal.forEach((e) => {
-        if (!e.revealed || !e.tdMax) return;
-        if (e.tdMax < 400) add('FAIL', 'ENTRANCE_TOO_FAST', where, `${e.el} reveals in ${e.td} (Luma reveals are about ${enterMs}ms; the owner rejected 100ms)`);
-        else if (Math.abs(e.tdMax - enterMs) > 100) add('WARN', 'ENTRANCE_DURATION_DRIFT', where, `${e.el} transition ${e.td} (Luma: ${enterMs}ms)`);
+      const reveals = await page.evaluate(() => (window.__lmRevealLog || []).splice(0));
+      reveals.forEach((e) => {
+        if (!e.ms) return;
+        if (e.ms < 400) add('FAIL', 'ENTRANCE_TOO_FAST', where, `${e.el} reveals in ${e.ms}ms (Luma reveals are about ${enterMs}ms; the owner rejected 100ms)`);
+        else if (Math.abs(e.ms - enterMs) > 100) add('WARN', 'ENTRANCE_DURATION_DRIFT', where, `${e.el} reveals in ${e.ms}ms (Luma: ${enterMs}ms)`);
       });
       if (r.glass.length && width < 600) r.glass.forEach((g) => g.area > 375 * 800 * 0.6 && add('WARN', 'LARGE_BACKDROP_BLUR', where, `${g.el} ${g.area}px² (keep blur on small fixed layers)`));
     }

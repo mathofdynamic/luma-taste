@@ -63,7 +63,7 @@ Scale (fluid, via `clamp()`): display 34 to 60px/600, h2 26 to 40px/500, h3 18 t
   | Level | Background | Blur | Use |
   |---|---|---|---|
   | Thin | `--bg` 55-60% | `blur(16px) saturate(1.4)` | header bar |
-  | Strong | `--surface-1` 68% | `blur(24px) saturate(1.6)` + `0 24px 64px -24px rgb(0 0 0 / .55)` | dropdowns, popovers |
+  | Strong | `--surface-1` 80% | `blur(28px) saturate(1.6)` + `0 24px 64px -24px rgb(0 0 0 / .55)` | dropdowns, popovers |
   | Sheet | `--surface-1` 82% | `blur(24px) saturate(1.6)` over a scrim of `rgb(0 0 0 / .5)` + `blur(4px)` | mobile menu, dialogs |
   | Scrim (lightbox) | 45% black | `blur(10px)` | lightbox, modal backdrops |
 
@@ -71,6 +71,7 @@ Scale (fluid, via `clamp()`): display 34 to 60px/600, h2 26 to 40px/500, h3 18 t
 - A bigger surface reads as thicker: more blur and a deeper shadow than a chip.
 - Materialize: surfaces animate scale/opacity (and optionally blur radius) together on enter, rather than a plain fade, when the cost is acceptable.
 - Provide a fallback for browsers without `backdrop-filter` (higher-opacity solid), included in `luma-motion.css`.
+- **Declaration order (found on the home page, 2026-10-23):** write `-webkit-backdrop-filter` **before** `backdrop-filter`. CSS minifiers (Lightning CSS in Next.js) merge the pair and keep only the last declaration; with the standard property first, production ships only the prefixed one and Chrome renders **no blur at all** while dev looks fine. The audit fails this as `BACKDROP_PREFIX_ONLY`. Always confirm glass in a production build (`getComputedStyle(el).backdropFilter !== 'none'`).
 
 ## Imagery
 

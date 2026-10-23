@@ -19,7 +19,8 @@ Format: **what was shipped → why it was rejected → the rule → how to check
    - Rule: the active item is a **pill** (surface fill + hairline border) around the label. Never combine `text-decoration` with a drawn underline; never use underlines for the active state.
    - Check: screenshot the header on every page state; exactly one indicator, a pill.
 4. **Dropdown had weak blur**, content behind was distracting.
-   - Rule: menus use the strong glass: about 60-70% surface opacity + `blur(24px) saturate(1.6)`.
+   - Root cause found later: the production CSS kept only `-webkit-backdrop-filter`, so Chrome showed no blur at all (see the declaration-order rule in `identity-and-tokens.md`).
+   - Rule: menus use the strong glass: about 80% surface opacity + `blur(28px) saturate(1.6)`, verified in a production build.
 5. **Dropdown stayed open after the pointer left.**
    - Rule: hover intent. Open after about 80ms of hover on fine pointers, close about 160ms after the pointer leaves the trigger *and* the panel. Click, Enter/Space and Escape still work; touch uses click.
 6. **Dropdown items were plain text.**
@@ -67,6 +68,7 @@ Format: **what was shipped → why it was rejected → the rule → how to check
 
 - [ ] Hero demo cycles through at least 4 tools with real results; paused off-screen; static frame names several tools.
 - [ ] Header: single pill active state; hover pill; no underline anywhere in the nav.
+- [ ] Glass verified in production: `backdrop-filter` computed (not `none`) on header, menus, sheet; audit has no `BACKDROP_PREFIX_ONLY`.
 - [ ] Dropdowns: hover intent open/close, strong glass, icons, staggered items, one morphing panel sliding between triggers, Escape and focus return work.
 - [ ] Mobile menu stands out (scrim + dense glass), materializes from the trigger, no inner scrollbar at 375×667.
 - [ ] Theme switch reveals in a circle from the toggle; instant under reduced motion.

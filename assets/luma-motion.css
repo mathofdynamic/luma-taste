@@ -88,9 +88,9 @@
 }
 /* Strong glass for dropdowns/popovers and the mobile sheet (identity-and-tokens.md, material levels) */
 .lm-glass-strong {
-  background: color-mix(in srgb, var(--surface-1) 68%, transparent);
-  -webkit-backdrop-filter: blur(24px) saturate(1.6);
-  backdrop-filter: blur(24px) saturate(1.6);
+  background: color-mix(in srgb, var(--surface-1) 80%, transparent);
+  -webkit-backdrop-filter: blur(28px) saturate(1.6); /* -webkit- first: minifiers keep the LAST of the pair */
+  backdrop-filter: blur(28px) saturate(1.6);
   border: 1px solid var(--glass-border);
   box-shadow: 0 24px 64px -24px rgb(0 0 0 / .55);
 }

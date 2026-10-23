@@ -148,6 +148,7 @@ const findings = []; // {level, check, where, detail}
 const add = (level, check, where, detail) => findings.push({ level, check, where, detail });
 const seams = [];
 const themeEvidence = [];
+let glassChecked = false;
 const browser = await chromium.launch({ executablePath: args.chrome || undefined, args: ['--no-sandbox'] });
 
 for (const width of widths) {
@@ -160,6 +161,17 @@ for (const width of widths) {
     page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
     page.on('pageerror', (e) => errors.push(String(e)));
     await page.goto(url, { waitUntil: 'networkidle' });
+    if (!glassChecked) { // shipped CSS: a rule that kept only -webkit-backdrop-filter renders NO blur in Chromium/Firefox
+      glassChecked = true;
+      const sheets = await page.evaluate(() => [...document.styleSheets].map((s) => s.href || s.ownerNode?.textContent || ''));
+      for (const sheet of sheets) {
+        let css = sheet; if (/^https?:/.test(sheet)) { try { css = await (await fetch(sheet)).text(); } catch { continue; } }
+        for (const block of css.match(/[^{}]+\{[^{}]*\}/g) || []) {
+          if (/-webkit-backdrop-filter\s*:/.test(block) && !/(^|[;{\s])backdrop-filter\s*:/.test(block.replace(/-webkit-backdrop-filter/g, '')))
+            add('FAIL', 'BACKDROP_PREFIX_ONLY', 'css', `${block.slice(0, block.indexOf('{')).trim().slice(0, 80)} ships only -webkit-backdrop-filter (write the -webkit- declaration BEFORE backdrop-filter; minifiers keep the last one)`);
+        }
+      }
+    }
     await page.evaluate(([a, t]) => {
       const el = document.documentElement;
       if (a === 'class') { el.classList.remove('light', 'dark'); el.classList.add(t); } // keep unrelated root classes

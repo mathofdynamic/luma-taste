@@ -5,8 +5,9 @@
     "identicalSeams": 8
   },
   "broken": {
-    "fails": 42,
+    "fails": 43,
     "expectedChecks": [
+      "BACKDROP_PREFIX_ONLY",
       "ENTRANCE_TOO_FAST",
       "LOOP_RUNS_OFFSCREEN",
       "NO_JS_HIDDEN_CONTENT",
@@ -18,6 +19,7 @@
       "THEME_NOT_APPLIED"
     ],
     "detectedChecks": [
+      "BACKDROP_PREFIX_ONLY",
       "ENTRANCE_TOO_FAST",
       "LOOP_RUNS_OFFSCREEN",
       "NO_JS_HIDDEN_CONTENT",
@@ -41,5 +43,5 @@
   ],
   "themeAttr": "class",
   "enterMs": 600,
-  "verifiedOn": "2026-10-22"
+  "verifiedOn": "2026-10-23"
 }

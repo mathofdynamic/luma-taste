@@ -5,15 +5,17 @@
     "identicalSeams": 8
   },
   "broken": {
-    "fails": 43,
+    "fails": 56,
     "expectedChecks": [
       "BACKDROP_PREFIX_ONLY",
       "ENTRANCE_TOO_FAST",
+      "IDLE_LAYOUT_SHIFT",
       "LOOP_RUNS_OFFSCREEN",
       "NO_JS_HIDDEN_CONTENT",
       "OVERFLOW_X",
       "PERSIAN_LETTER_SPACING",
       "PREMATURE_REVEAL",
+      "REVEAL_NEVER_FIRES",
       "TEXT_CLIPPED",
       "TEXT_TRUNCATED",
       "THEME_NOT_APPLIED"
@@ -21,12 +23,14 @@
     "detectedChecks": [
       "BACKDROP_PREFIX_ONLY",
       "ENTRANCE_TOO_FAST",
+      "IDLE_LAYOUT_SHIFT",
       "LOOP_RUNS_OFFSCREEN",
       "NO_JS_HIDDEN_CONTENT",
       "OVERFLOW_X",
       "PERSIAN_LETTER_SPACING",
       "PREMATURE_REVEAL",
       "REDUCED_MOTION_HIDDEN",
+      "REVEAL_NEVER_FIRES",
       "TEXT_CLIPPED",
       "TEXT_TRUNCATED",
       "THEME_NOT_APPLIED"

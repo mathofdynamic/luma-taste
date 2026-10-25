@@ -75,6 +75,7 @@ The owner rejected 100ms entrances as "too fast and working badly". Luma content
 
 Trigger rules for content reveals:
 - One IntersectionObserver for every `[data-reveal]` element (not one per section): threshold 0.15, `rootMargin: 0px 0px -10% 0px`. An element reveals when *it* is on screen, so long sections unfold as you scroll.
+- **End-of-page fallback (required):** the shrunken bottom margin can never reach the last elements of a page (the footer's bottom bar sits inside the bottom 10-12% even at maximum scroll), so they stay invisible forever. When `innerHeight + scrollY` reaches `scrollHeight`, reveal every staged element on screen (`tail()` in `assets/luma-motion.js`). The audit fails this as `REVEAL_NEVER_FIRES`.
 - Entries that arrive in the same callback are sorted by DOM order and staggered (`--lm-i`).
 - The hidden state (`opacity:0; transform:translate3d(0,24px,0)`) is applied only to elements that are **below the viewport when JS boots**; elements already visible at boot are marked revealed without animation. This removes the "visible → hidden → animate" blink.
 - Above-the-fold content (hero) uses the CSS-only load sequence, so it never depends on JS and never blinks.

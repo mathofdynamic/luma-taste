@@ -45,6 +45,7 @@ Format: **what was shipped → why it was rejected → the rule → how to check
 12. **Entrances were too fast (100ms) and "worked really badly sometimes"**: elements were visible, then jumped to hidden when the reveal started (blink), and several sections fired at load.
     - Rule: Luma entrance timing (about 600ms, 24px rise, 70ms stagger), per element on scroll (15% visible, bottom root margin -10%), hidden state staged before the element reaches the viewport, elements already on screen when JS boots are not re-hidden. See `motion-system.md` §4.
     - Check: audit `PREMATURE_REVEAL` and `REVEAL_NOT_STAGED` are clean; record a scroll and watch for blinks.
+    - Found while verifying the fix: with the shrunken bottom margin, the footer's last row could never reveal (it stays inside the bottom 12% even at maximum scroll). Rule: every reveal runtime has the end-of-page fallback; audit `REVEAL_NEVER_FIRES` is clean.
 
 ### Showcase (before / after)
 13. **Large dead space under the text column** next to a tall image.
@@ -64,6 +65,13 @@ Format: **what was shipped → why it was rejected → the rule → how to check
 17. **Flat marquee with hard edges.**
     - Rule: edge fade masks plus a lens effect: cards near the edges are larger, turned toward the viewer (concave cylinder) and fade away. See `signature-patterns.md` §8.
 
+### Found while verifying review 01 (not raised by the owner, same class of mistake)
+18. **The hero demo moved the page.** During the typing phase the caret wrapped onto a third line, the studio grew 20px and the centered hero copy jumped on every scene change.
+    - Rule: an auto-playing demo reserves the largest space any of its scenes/phases needs; carets and badges never add a line (flex row, not inline wrap).
+    - Check: audit `IDLE_LAYOUT_SHIFT` is clean.
+19. **Testimonial lens at 375px showed one swinging card.** The lens was normalized by half the viewport (about one card at 375px).
+    - Rule: lens radius `max(viewport / 2, 1.5 × card width)`; check the lens in a 375px viewport screenshot.
+
 ## Pre-delivery checklist (state the result of each line in the report)
 
 - [ ] Hero demo cycles through at least 4 tools with real results; paused off-screen; static frame names several tools.
@@ -73,9 +81,10 @@ Format: **what was shipped → why it was rejected → the rule → how to check
 - [ ] Mobile menu stands out (scrim + dense glass), materializes from the trigger, no inner scrollbar at 375×667.
 - [ ] Theme switch reveals in a circle from the toggle; instant under reduced motion.
 - [ ] Primary buttons use the liquid fill hover; press scale on all buttons.
-- [ ] Entrances: about 600ms, per element on scroll, no blink, nothing below the fold revealed at load.
+- [ ] Entrances: about 600ms, per element on scroll, no blink, nothing below the fold revealed at load, and nothing still hidden at the very bottom (footer included).
 - [ ] No dead space in two-column sections at 1024 and 1440.
 - [ ] Comparisons follow the pointer; no slider under media; keyboard arrows work.
 - [ ] Media tiles: skeleton while loading, smooth reveal on decode, fallback on error.
 - [ ] Explainer stories are legible, play on view, repeat while in view, no replay buttons.
-- [ ] Testimonials: edge fade and lens effect; pause on hover/focus; reduced motion = swipeable static row.
+- [ ] Testimonials: edge fade and lens effect (also at 375px: neighbors peek, the centered card is flat); pause on hover/focus; reduced motion = swipeable static row.
+- [ ] Idle at the top for 12s: nothing moves the layout (`IDLE_LAYOUT_SHIFT` clean).

@@ -65,6 +65,16 @@ export function initLumaMotion(root = document) {
   staged.forEach((el) => io.observe(el));
   cleanups.push(() => io.disconnect());
 
+  // The shrunken root margin never reaches the last elements of a short tail (a footer): once the page
+  // cannot scroll further, reveal what is on screen. Without this, the footer stays invisible forever.
+  const tail = () => {
+    if (innerHeight + scrollY < document.documentElement.scrollHeight - 2) return;
+    staged.filter((el) => el.getAttribute('data-revealed') === 'false' && el.getBoundingClientRect().top < innerHeight)
+      .forEach((el, i) => { io.unobserve(el); reveal(el, i); });
+  };
+  addEventListener('scroll', tail, { passive: true });
+  cleanups.push(() => removeEventListener('scroll', tail));
+
   // Elements scrolled past without ever intersecting (anchor jumps) reveal when the user scrolls back; nothing
   // is permanently hidden because the observer keeps watching them until they intersect.
 

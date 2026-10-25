@@ -47,6 +47,11 @@ const chromium = pw.chromium || pw.default?.chromium;
 
 /* ---------- injected before any page script: records the motion that actually reveals [data-reveal] elements ---------- */
 function revealRecorder() {
+  const shifts = (window.__lmShifts = []); // layout shifts without input: a looping demo must never move the page
+  try {
+    new PerformanceObserver((list) => list.getEntries().forEach((e) => { if (!e.hadRecentInput) shifts.push({ value: e.value, sources: (e.sources || []).map((s) => s.node && s.node.nodeType === 1 ? s.node.tagName.toLowerCase() + (s.node.classList[0] ? '.' + s.node.classList[0] : '') : '').filter(Boolean) }); }))
+      .observe({ type: 'layout-shift', buffered: true });
+  } catch {}
   const log = (window.__lmRevealLog = []);
   const name = (el) => (el.id ? '#' + el.id : el.tagName.toLowerCase() + (el.classList[0] ? '.' + el.classList[0] : ''));
   const keep = (el, props, ms) => {
@@ -106,6 +111,7 @@ function auditPage(margin = 0) {
       infinite, duration: t.duration, delay: t.delay, direction: t.direction, easing: t.easing,
       properties: [...props], paintOnly: [...props].filter((p) => !COMPOSITOR.has(p)),
       playState: a.playState, targetInView: target ? inView(target, margin) : false,
+      loading: !!target?.closest?.('[data-loop=skeleton]'), // transient loading shimmer: exempt from the decorative budget
     };
   });
   const loops = animations.filter((a) => a.infinite);
@@ -118,7 +124,14 @@ function auditPage(margin = 0) {
     if (!own) return;
     const r = el.getBoundingClientRect();
     if (r.width === 0 || r.height === 0) return;
-    const clipped = (cs.overflow !== 'visible' || cs.overflowY !== 'visible') && el.scrollHeight > el.clientHeight + 2 && el.clientHeight > 0;
+    // Measure the text's own line boxes: decorative absolute layers (a liquid-fill ::before parked
+    // below a button) inflate scrollHeight without clipping any glyph.
+    let clipped = false;
+    if ((cs.overflow !== 'visible' || cs.overflowY !== 'visible') && el.scrollHeight > el.clientHeight + 2 && el.clientHeight > 0) {
+      const range = document.createRange(); range.selectNodeContents(el);
+      const t = range.getBoundingClientRect(), top = r.top + el.clientTop, bottom = top + el.clientHeight;
+      clipped = t.height > 0 && (t.bottom > bottom + 2 || t.top < top - 2);
+    }
     const ellipsis = cs.textOverflow === 'ellipsis' && el.scrollWidth > el.clientWidth + 1;
     const clamp = cs.webkitLineClamp && cs.webkitLineClamp !== 'none';
     const fs = parseFloat(cs.fontSize);
@@ -138,7 +151,7 @@ function auditPage(margin = 0) {
   return {
     viewport: [vw, vh], scrollY: Math.round(scrollY),
     overflowX: document.documentElement.scrollWidth > vw + 1, scrollWidth: document.documentElement.scrollWidth,
-    loops, runningLoopsInView: loops.filter((a) => a.playState === 'running' && a.targetInView).length,
+    loops, runningLoopsInView: loops.filter((a) => a.playState === 'running' && a.targetInView && !a.loading).length, runningLoopNames: loops.filter((a) => a.playState === 'running' && a.targetInView && !a.loading).map((a) => `${a.name || a.kind}@${a.target.split(' > ').pop()}`),
     runningLoopsOffscreen: loops.filter((a) => a.playState === 'running' && !a.targetInView),
     text, glass, reveal, totalAnimations: animations.length,
   };
@@ -180,9 +193,16 @@ for (const width of widths) {
     await page.waitForTimeout(400);
     const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
     themeEvidence.push({ where, bg });
+    { // idle at the top: auto-playing demos (hero studio, stories, marquees) must not shift layout
+      await page.evaluate(() => window.__lmShifts.splice(0));
+      await page.waitForTimeout(12000); // long enough for a hero demo to reach its second scene
+      const idle = await page.evaluate(() => window.__lmShifts.splice(0));
+      const sum = idle.reduce((t, e) => t + e.value, 0);
+      if (sum > 0.005) add('FAIL', 'IDLE_LAYOUT_SHIFT', where, `layout shifted by ${sum.toFixed(4)} in 12s with no input (sources: ${[...new Set(idle.flatMap((e) => e.sources))].slice(0, 4).join(', ') || 'unknown'}); reserve the space a loop needs (text that wraps differently per scene/phase, carets, badges)`);
+    }
     const total = await page.evaluate(() => document.documentElement.scrollHeight);
     const vh = page.viewportSize().height;
-    let maxInView = 0;
+    let maxInView = 0, maxNames = [];
     const seenText = new Map();
     for (let y = 0; y < total; y += Math.round(vh * 0.8)) {
       await page.evaluate((yy) => scrollTo(0, yy), y);
@@ -190,7 +210,7 @@ for (const width of widths) {
       const r = await page.evaluate(auditPage, margin);
       if (y === 0) r.reveal.filter((e) => e.belowFold && e.rendered && e.opacity >= 0.99).forEach((e) => add('FAIL', 'PREMATURE_REVEAL', where,
         `${e.el} is below the fold but already visible at load (reveal on scroll; stage it hidden before it enters, or the reveal will blink)`));
-      maxInView = Math.max(maxInView, r.runningLoopsInView);
+      if (r.runningLoopsInView > maxInView) { maxInView = r.runningLoopsInView; maxNames = r.runningLoopNames; }
       if (r.overflowX) add('FAIL', 'OVERFLOW_X', where, `scrollWidth ${r.scrollWidth} > viewport at scrollY ${r.scrollY}`);
       r.runningLoopsOffscreen.forEach((a) => add('FAIL', 'LOOP_RUNS_OFFSCREEN', where, `${a.target} (${a.name}) is running while off-screen`));
       r.loops.forEach((a) => a.paintOnly.length && !a.target.includes('lm-gradient-word') && add('WARN', 'LOOP_PAINT_PROPERTY', where, `${a.target} animates ${a.paintOnly.join(', ')} (paint-heavy: use transform/opacity; the only sanctioned exception is .lm-gradient-word, in view only)`));
@@ -209,20 +229,31 @@ for (const width of widths) {
       });
       if (r.glass.length && width < 600) r.glass.forEach((g) => g.area > 375 * 800 * 0.6 && add('WARN', 'LARGE_BACKDROP_BLUR', where, `${g.el} ${g.area}px² (keep blur on small fixed layers)`));
     }
-    if (maxInView > 4) add('WARN', 'MANY_CONCURRENT_LOOPS', where, `${maxInView} infinite animations running at once (budget: 3-4 on mobile)`);
+    { // at the very bottom, nothing on screen may still be staged hidden (a shrunken root margin cannot reach a short footer)
+      await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight)); await page.waitForTimeout(1500);
+      const stuckHidden = await page.evaluate(() => [...document.querySelectorAll('[data-revealed=false]')].filter((el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && r.top < innerHeight && r.bottom > 0 && !el.closest('details:not([open])'); }).map((el) => (el.className?.baseVal ?? el.className).toString().split(' ').pop() || el.tagName));
+      if (stuckHidden.length) add('FAIL', 'REVEAL_NEVER_FIRES', where, `${stuckHidden.length} element(s) still hidden at the end of the page: ${stuckHidden.slice(0, 4).join(', ')} (add an end-of-page fallback; see luma-motion.js tail())`);
+    }
+    { // a loading shimmer must stop once its media has decoded
+      await page.waitForTimeout(3000);
+      const stuck = await page.evaluate(() => document.getAnimations().filter((a) => a.playState === 'running' && a.effect?.getTiming().iterations === Infinity).map((a) => a.effect.target?.closest?.('[data-loop=skeleton]')).filter((el) => el && [...el.querySelectorAll('img')].some((i) => i.complete && i.naturalWidth > 0)).length);
+      if (stuck) add('FAIL', 'SKELETON_AFTER_LOAD', where, `${stuck} loading shimmer(s) still running over a decoded image (remove data-loop="skeleton" / data-loading on load and on error)`);
+    }
+    if (maxInView > 4) add('WARN', 'MANY_CONCURRENT_LOOPS', where, `${maxInView} infinite animations running at once (budget: 3-4 on mobile): ${maxNames.slice(0, 10).join(', ')}`);
     if (errors.length) add('FAIL', 'CONSOLE_ERRORS', where, errors.slice(0, 3).join(' | '));
 
     if (args.seam) {
       await page.evaluate(() => scrollTo(0, 0));
-      const loops = await page.evaluate(() => document.getAnimations().filter((a) => a.effect?.getTiming?.().iterations === Infinity).map((a, i) => { const el = a.effect.target; el.setAttribute('data-seam-id', 's' + i); return { id: 's' + i, duration: a.effect.getTiming().duration }; }));
+      const loops = await page.evaluate(() => document.getAnimations().filter((a) => a.effect?.getTiming?.().iterations === Infinity).map((a, i) => { const el = a.effect.target; if (!el.hasAttribute('data-seam-id')) el.setAttribute('data-seam-id', 's' + i); return { id: el.getAttribute('data-seam-id'), duration: a.effect.getTiming().duration }; }).filter((l, i, all) => all.findIndex((o) => o.id === l.id) === i)); // one element can own several loops (e.g. its ::before shimmer)
       for (const l of loops) {
-        await page.evaluate((id) => document.querySelector(`[data-seam-id="${id}"]`).scrollIntoView({ block: 'center' }), l.id);
+        const present = await page.evaluate((id) => { const el = document.querySelector(`[data-seam-id="${id}"]`); el?.scrollIntoView({ block: 'center' }); return !!el; }, l.id);
+        if (!present) continue; // the loop's element left the DOM (e.g. a loading skeleton replaced by its image)
         await page.waitForTimeout(1000); // settle finite entrance/explainer motion before isolating a loop seam
         // A moving loop's own bounds change across the wrap. Keep a fixed
         // crop of its clipping viewport so near-wrap frames show the same place.
         const clip = await page.evaluate((id) => {
-          document.getAnimations().filter(a=>a.effect?.getTiming().iterations===Infinity).forEach(a=>a.pause());
-          let el=document.querySelector(`[data-seam-id="${id}"]`), box=el.ownerSVGElement || el;
+          document.getAnimations().forEach(a=>a.pause()); // freeze finite explainer stories too, or they read as a seam
+          let el=document.querySelector(`[data-seam-id="${id}"]`); if(!el) return null; let box=el.ownerSVGElement || el;
           const moving=el.getBoundingClientRect().width>innerWidth;
           for(let p=moving?el.parentElement:null;p;p=p.parentElement) {
             const c=getComputedStyle(p);
@@ -231,8 +262,9 @@ for (const width of widths) {
           const r=box.getBoundingClientRect(), x=Math.max(0,r.left), y=Math.max(0,r.top);
           return {x,y,width:Math.max(1,Math.min(innerWidth,r.right)-x),height:Math.max(1,Math.min(innerHeight,r.bottom)-y)};
         },l.id);
+        if (!clip) continue;
         const frame = async (t) => {
-          await page.evaluate(([id, time]) => document.getAnimations().filter((a) => a.effect?.target?.getAttribute?.('data-seam-id') === id).forEach((a) => { a.pause(); a.currentTime = time; }), [l.id, t]);
+          await page.evaluate(([id, time]) => document.getAnimations().forEach((a) => { a.pause(); if (a.effect?.target?.getAttribute?.('data-seam-id') === id && a.effect.getTiming().iterations === Infinity) a.currentTime = time; }), [l.id, t]); // story timers may start new animations: freeze them as well
           await page.waitForTimeout(80);
           return page.screenshot({clip});
         };
@@ -240,8 +272,17 @@ for (const width of widths) {
         const ha = crypto.createHash('sha1').update(a).digest('hex'), hb = crypto.createHash('sha1').update(b).digest('hex');
         const base = path.join(out, `seam-${width}-${theme}-${l.id}`);
         fs.writeFileSync(base + '-t0.png', a); fs.writeFileSync(base + '-tPeriod.png', b); fs.writeFileSync(base + '-tNear.png', n); // tNear = one frame before the wrap; compare with t0 to catch a jump hidden by endpoint wrapping
-        seams.push({ where, id: l.id, duration: l.duration, identical: ha === hb });
-        if (ha !== hb) add('WARN', 'LOOP_SEAM_DIFFERS', where, `${l.id}: frame at t=0 differs from t=period (see ${base}-t*.png); inspect visually, tiny AA differences are OK, a visible jump is not`);
+        // Hashes differ on 1-level antialiasing noise too; measure the largest channel delta in the page.
+        const delta = ha === hb ? 0 : await page.evaluate(async ([x, y]) => {
+          const load = (b64) => new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.src = 'data:image/png;base64,' + b64; });
+          const [p, q] = await Promise.all([load(x), load(y)]);
+          const px = (img) => { const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; const g = c.getContext('2d'); g.drawImage(img, 0, 0); return g.getImageData(0, 0, c.width, c.height).data; };
+          const da = px(p), db = px(q); let m = 0;
+          for (let i = 0; i < da.length; i++) m = Math.max(m, Math.abs(da[i] - db[i]));
+          return m;
+        }, [a.toString('base64'), b.toString('base64')]);
+        seams.push({ where, id: l.id, duration: l.duration, identical: delta <= 2 });
+        if (delta > 2) add('WARN', 'LOOP_SEAM_DIFFERS', where, `${l.id}: frame at t=0 differs from t=period (see ${base}-t*.png); inspect visually, tiny AA differences are OK, a visible jump is not`);
       }
     }
     await ctx.close();

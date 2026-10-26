@@ -26,7 +26,7 @@ The gradient is Luma's signature, so it is **animated and recurring**, but disci
 
 - **Title word:** the main word or phrase of each large heading uses `.lm-gradient-word` (animated, in-view only). One per heading.
 - **Concurrency:** at most 2 animated gradient elements in a viewport. The audit warns on more than 4 running loops of any kind on mobile.
-- **Elsewhere:** thin accent lines, glows (one static radial gradient per hero/CTA), progress fills, and one "brand CTA" border. Never gradient fills on buttons, cards, nav, body text or icons.
+- **Elsewhere:** glows (one static radial gradient per hero/CTA; pointer glows rotate through all three brand colors), real progress fills, and one "brand CTA" border. Never gradient fills on buttons, cards, nav, body text or icons, and never decorative accent lines (owner review 02: "AI slop").
 - **Text ramp:** on dark backgrounds use the lighter text ramp (`--luma-text-*`); the raw brand purple fails contrast as text.
 - **Glow:** a static `radial-gradient(60% 50% at 50% 0%, rgb(139 27 173 / .35), transparent 70%)`. No full-screen blur filters and no animated canvas/WebGL.
 

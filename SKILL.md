@@ -30,18 +30,22 @@ These come from the owner's reviews of the site. They override generic design ad
 1. **Rich motion everywhere**, from micro-interactions to section-level choreography. A static Luma page is a regression.
 2. **Animated gradient on the main word of big titles.** The gradient flows slowly through the Luma colors on the key word of each large heading. It runs only while the title is in view (`.lm-gradient-word`).
 3. **Interactive UI reacts on hover with an animation related to what the element is.** A scissors icon snips; a waveform moves; an upscale icon pushes outward. Generic "lift and shadow" alone is not enough. See the hover vocabulary in `references/layout-and-components.md`.
-4. **The page grid is law, and space is used.** Every block snaps to the 12-column container grid. Two-column compositions balance their heights: no column may leave a large empty area beside a tall neighbour (see "Dead space" in `layout-and-components.md`).
+4. **The page grid is law, and space is used.** Every block snaps to the 12-column container grid (measure the edges at 375/768/1024/1440; a masonry built on CSS `columns` broke it at runtime). Two-column compositions balance their heights: no column may leave a large empty area beside a tall neighbour (see "Dead space" in `layout-and-components.md`).
 5. **Card text is never cut off.** No ellipsis, no line-clamp on descriptive copy; give the text more lines and let rows grow equally.
 6. **Entrances are calm and scroll-driven.** Each element reveals when *it* scrolls into view (not the whole page at load), with Luma's entrance timing: about 600ms, `cubic-bezier(.16,1,.3,1)`, 24px rise, 70ms stagger. Hidden states are staged before the element reaches the viewport so a reveal never blinks. Exact tokens: `references/motion-system.md` section 4 (this overrides the 100ms default of the bundled entrance contract).
 7. **The hero shows the breadth of Luma.** The hero visual is a living product demo that cycles through several tools (create image, edit, video, try-on, assistant…) with real results. A hero that shows a single tool is wrong.
 8. **Navigation feels like one object.** Active page = a pill around the item (never underlines). Dropdowns open on hover intent and close when the pointer leaves; one shared glass panel morphs and slides (ease-in-out) between triggers; items have icons and stagger in. The mobile menu stands out from the page (dim scrim + dense glass) and shows every item without an inner scrollbar.
 9. **Explainers tell a story you can read.** Bento and explainer cards play a legible, meaningful animation (1.2 to 3s) when they enter the view and gently repeat while in view; hover replays it. No "replay" buttons, no 300ms twitches nobody notices.
-10. **Testimonials are a lens marquee.** Infinite marquee, edges fade out, and cards grow and turn toward the viewer near the edges (concave "lens" effect). Pauses on hover/focus; static and swipeable under reduced motion.
+10. **Testimonials are a full-bleed lens marquee.** Infinite marquee running edge to edge of the viewport (the one content exception to the container), edges fade out, and cards grow and turn toward the viewer near the edges (concave "lens" effect). Pauses on hover/focus with no visible pause button; static and swipeable under reduced motion.
 11. **Materials: backdrop blur plus LOW opacity** for the header, menus, popovers and image lightbox. Never opaque, never blur alone. Menus use the strong glass (about 24px blur). Recipes in `assets/luma-motion.css`.
 12. **Interactions have craft.** Primary buttons fill with a liquid wave of the inverse color on hover (not an instant color swap). Theme switching reveals the new theme in a circle growing from the toggle. Before/after comparisons follow the pointer on hover (drag on touch, arrow keys on keyboard); never a range slider under the image.
 13. **Media never pops.** Every image and video tile shows a skeleton shimmer while loading and reveals smoothly when decoded. Failures show a quiet fallback with retry.
 14. **Loop animations need extra care and proof.** Every loop is gated to the viewport, seamless, cheap, reduced-motion safe, and verified with the audit script.
-15. **Persian first.** RTL, logical properties, no letter-spacing on Persian text, readable line-height 1.8, real Persian copy.
+15. **The UI plays itself.** A showcase, a set of cases or scenes never waits for a click: it cycles on its own (pausing on hover/focus, off-screen and under reduced motion). Typed text appears word by word in reading order, never one wipe over several lines. (`signature-patterns.md` sections 4 and 10.)
+16. **No accent lines; the brand has three colors.** No gradient or colored bars on card edges, active items or titles anywhere ("AI slop"); state is surface, border and motion. Card hover glows rotate purple, magenta and orange, never one color. (`signature-patterns.md` section 11.)
+17. **Nothing moves the page by itself.** Autoplay, lazy sections, loading media and sweeps must cause no layout shift while idle or scrolling: reserve real heights, stack changing labels in one cell, move with `transform`, shimmer with `background-position`. (`performance-and-verification.md` section 2.)
+18. **The bento explainers on the home page are the benchmark** for micro-animation on every new page (owner review 02).
+19. **Persian first.** RTL, logical properties, no letter-spacing on Persian text, readable line-height 1.8, real Persian copy.
 
 ## The motion matrix (required deliverable)
 
@@ -52,10 +56,10 @@ Before building, fill this table for the page. Every row needs at least an entra
 | Nav / header | load sequence; menus per surface tokens | active pill, hover pill, hover-intent morphing dropdown, circular theme switch | glass deepens on scroll | none |
 | Hero | sequenced headline, subline, CTAs, demo | liquid-fill CTA, tool rail is clickable | none | multi-tool studio demo, gradient word |
 | Services grid | cards in DOM order as they enter | icon-specific hover story per card, pointer glow | none | none |
-| Showcase (before/after) | scroll-driven | comparison follows pointer / drag / arrows | reveal sweeps once on view | none |
+| Showcase (before/after) | scroll-driven | comparison follows pointer / drag / arrows (pauses autoplay) | divider sweeps at each case | cycles through its cases by itself |
 | Gallery | tiles as they enter, after decode | tile hover zoom + play badge | skeleton → image reveal | skeleton shimmer while loading |
 | Explainer / bento | scroll-driven | each card replays its story on hover | stories play on view | stories repeat gently while in view |
-| Testimonials | scroll-driven | pause on hover/focus | none | lens marquee |
+| Testimonials | scroll-driven | pause on hover/focus | none | full-bleed lens marquee |
 | Final CTA | scroll-driven | liquid-fill CTA | glow follows scroll | gradient word |
 | Footer | scroll-driven | link hover | none | none |
 | Modals, lightbox, menus | surface tokens (open 240-320ms, close 160ms) | focus return | none | none |
@@ -92,6 +96,8 @@ Assets: `assets/luma-tokens.css`, `assets/luma-motion.css`, `assets/luma-motion.
 - A loop that is not gated to the viewport, not seamless, or not reduced-motion safe.
 - `transition: all`; animating `margin`, `top`, `left`; `scale(0)` entrances; `ease-in` on UI. (`width`/`height` only for the sanctioned morphing menu panel, see `signature-patterns.md`.)
 - Text that is truncated, clipped, under 12px, or letter-spaced in Persian.
+- Decorative accent lines in cards; a hover glow in a single color; a showcase that waits for clicks; a visible pause button on the marquee; multi-line text revealed by one wipe.
+- Layout shift without input, idle or while scrolling (`IDLE_LAYOUT_SHIFT`, `SCROLL_LAYOUT_SHIFT`).
 - A blur surface that is opaque or blur-only; a large full-screen `backdrop-filter` on mobile.
 - Hover-only information that touch users cannot reach.
 - A claim of "verified" without rendered-page evidence. If browser checks cannot run, say exactly which ones.

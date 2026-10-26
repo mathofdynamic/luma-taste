@@ -2,7 +2,7 @@
 
 Luma's recurring interactions, specified precisely enough that every page builds them the same way. Each one exists because the owner rejected a weaker version (see `owner-review-log.md`). The first implementation lives on the home page (`components/landing-v2/` in luma-landing); reuse and generalise it rather than re-inventing it per page.
 
-All patterns: transform / opacity / clip-path only (exceptions named), gated hover (`(hover: hover) and (pointer: fine)`), keyboard parity, reduced-motion fallback, readable without JS.
+All patterns: transform / opacity / clip-path only (exceptions named: the nav panel morph, and the loading shimmer in section 6, which animates `background-position` on a layer that never moves), gated hover (`(hover: hover) and (pointer: fine)`), keyboard parity, reduced-motion fallback, readable without JS.
 
 ---
 
@@ -97,7 +97,9 @@ A product window that cycles through Luma's tools with **real** results.
 │ ▢ دستیار      │  [prompt typing ▍]   [تولید]    │
 └────────────────────────────────────────────────┘
 ```
-- Scenes: at least 4 tools (create image, edit image before→after, make video, virtual try-on garment→result, assistant chat). Each scene: `type` (prompt reveals with a clip-path wipe in reading direction + caret, about 1.1s) → `process` (generate button presses, progress line fills, skeleton shimmer, about 0.9s) → `reveal` (result wipes/scales in, 600ms) → `hold` (about 1.8s). 4 to 5s per scene.
+- Scenes: at least 4 tools (create image, edit image before→after, make video, virtual try-on garment→result, assistant chat). Each scene: `type` (the prompt is typed **word by word in reading order**, about 1.4s) → `process` (generate button presses, progress line fills, skeleton shimmer, about 1s) → `reveal` (result wipes/scales in, 800ms) → `hold` (about 2.4s). 5 to 6s per scene.
+- **Typing is word by word, never a wipe over the block (owner review 02).** A single `clip-path` wipe over a prompt that wraps reveals line one and line two at the same time, which reads as fake. Split the text into word spans (`--w` index, `--n` count) and fade each word in at `w × (duration / n)`; a wrapped prompt then writes line one completely before line two starts. Persian words keep their joining because the split is at spaces only (ZWNJ stays inside the word). Every word keeps its final layout from the first frame (only opacity changes), so typing never reflows the hero. The caret is an absolutely positioned `::after` on the word being written (no box, no extra line); after the last word it blinks. The same applies to any typed answer (assistant chat, code, RAG answers): word by word, and the phase lasts until the last word has landed, or the switch to the next phase snaps the rest in at once.
+- **Nothing in the demo may change size between scenes or phases** (idle shifts found at 375px, review 02): per-phase labels (status pill: typing / making / ready) share one grid cell with `visibility`, so the pill keeps the widest width; the studio's grid tracks are explicit (`grid-template-columns: minmax(0, 1fr)`), because an `auto` track follows the active scene's content and resized the media by 9px.
 - The tool rail is real buttons: the active pill slides (`transform`) to the current tool; clicking a tool jumps to it and pauses auto-advance for 8s.
 - State lives in `data-scene` / `data-phase` on the root; CSS does every motion. A tiny scheduler (timeouts, not rAF) advances phases only while the studio is in view, the tab is visible, and reduced motion is off.
 - SSR / no-JS / reduced motion: the first scene in its settled `hold` frame, and the rail still lists every tool.
@@ -107,18 +109,24 @@ A product window that cycles through Luma's tools with **real** results.
 ## 5. Pointer-following comparison (before / after)
 
 - Stage: `role="slider"`, `tabindex="0"`, `aria-valuemin=0 aria-valuemax=100 aria-valuenow`, `aria-label`. Two layers; the result layer is clipped with `clip-path: inset(0 0 0 var(--pos))` (physical left/right chosen so the divider matches the labels), plus a 2px divider with a round handle at `--pos`.
+- **Move the divider with `transform`, never `left`.** Make the divider a full-stage layer translated by `calc(var(--pos) - 100%)` with the line and handle on its edge. Animating `left` is a layout change: every sweep (and every autoplay cycle) adds layout shift (measured on the home page, review 02).
+- Image layers that sit on a shared media primitive must win by specificity (`.stage .layer`), not by stylesheet order: a later-loading chunk flipped `.media { position: relative }` over `.layer { position: absolute }` and a pair rendered in flow at half width.
 - Fine pointer: `pointermove` over the stage sets `--pos` (rAF-throttled, one CSS variable write). No click needed.
 - Touch: `pointerdown` + `setPointerCapture` drag; `touch-action: pan-y` keeps vertical scrolling.
 - Keyboard: ArrowLeft/Right ±5, Home/End.
-- On first view the divider sweeps once (50 → 70 → 50, 1.2s `--lm-ease-move`) to invite interaction, unless the user already moved it.
+- On first view, and each time a case becomes active, the divider sweeps once (50 → 72 → 34 → 50, 1.6s `--lm-ease-move`) unless the user already moved it.
 - No range input under the image.
+- Inside a showcase with several cases, the comparison is part of the self-playing showcase (section 10).
 
 ## 6. Media loading: skeleton then reveal
 
-- Every media tile renders a skeleton in its final shape (fixed aspect ratio) with a shimmer: a pseudo-element with a soft diagonal highlight translating across (1.6s linear loop, `transform` only), **gated**: it only exists while `data-loading="true"` and runs only while the tile is in view.
+- Every media tile renders a skeleton in its final shape (fixed aspect ratio) with a shimmer, **gated**: it only exists while `data-loading="true"` and runs only while the tile is in view.
+- **The shimmer layer never moves (review 02).** Use `inset: 0` and a gradient `linear-gradient(100deg, transparent 40%, color-mix(in srgb, var(--text) 8%, transparent) 50%, transparent 60%) 100% 0 / 300% 100% no-repeat`, and animate only `background-position` from `100% 0` to `0 0` (1.6s linear). A highlight box translated in from outside the tile changes its clipped box on every pass, and Chrome counted each pass as layout shift (0.01 to 0.08 per gallery batch, even when the layer always covered the tile). This is the one sanctioned paint-property loop: small area, only while loading, in view only.
 - When the image's `load` fires (or `img.complete` at mount), `data-loading` flips to `false`; the image transitions `opacity 0 → 1` and `scale(1.03) → 1` over 500ms `--lm-ease-out`; the skeleton fades out.
 - Batches stagger by tile (40ms lead, capped).
 - Error: keep the skeleton shape, stop the shimmer, show a small quiet icon and the title; never a broken-image glyph.
+- **Masonry stays on the page grid.** Never CSS `columns`: it balances heights, so a short batch (a failed category, 9 of 12 works) left a column empty and the gallery stopped lining up with the sections around it (review 02). Use N equal grid columns (4 / 3 / 2) that span whole grid columns, and distribute tiles in JS (fewest tiles first, then the shortest column). Read the column count from `matchMedia` in the **first** render of a client-only section; starting at 4 and correcting in an effect painted a short block that then grew about 800px on phones.
+- **A loading batch reserves its final height.** Each batch reserves a fixed column height before data arrives (`aspect-ratio: 1 / (slots × 1.1)`) and the tiles share it by shape (`flex-grow` = height ratio, images `object-fit: cover`); "load more" reserves the next batch on the click itself (inside the input window). Loading, odd image sizes or a failed request then never move the sections below. If a batch comes back short, fall back to natural tile shapes rather than stretching lone tiles into strips.
 - Without JS: no `data-loading` attribute, so images are simply visible.
 
 ## 7. Explainer stories
@@ -130,11 +138,27 @@ A product window that cycles through Luma's tools with **real** results.
 
 ## 8. Lens marquee (testimonials)
 
-- Edge fade: `mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent)` on the viewport.
+- **Full bleed (review 02).** The rows run edge to edge of the viewport, outside the 1200px container (the header stays in the container; the section clips `overflow-x`). Inside the container only about three cards show and the lens cannot be seen. This is the one sanctioned exception to "content stays in the container".
+- Edge fade: `mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent)` on the viewport.
 - Lens: each card's transform depends on its horizontal distance `d` from the viewport center (normalized −1…1): `perspective(1200px) rotateY(d * -28deg) scale(1 + |d| * .14)` and `opacity: 1 - smoothstep(.72, 1.05, |d|)`. Cards near the edges are larger, turned toward the viewer (concave cylinder) and fade away. Normalize `d` by the **lens radius** `max(viewport / 2, 1.5 × card width)`, not by half the viewport alone: at 375px half the viewport is about one card, so neighbors sit at |d|≈1.8 (invisible) and the single card swings to the full turn within a few pixels (found on the home page at 375, review 01). Check the lens in a 375px viewport screenshot, not only at desktop.
-- Implementation: one shared rAF ticker per section, running only while the section is in view and the tab is visible. It advances the track offset (`translate3d`) and writes each card's transform/opacity from cached geometry (card centers measured on resize, never per frame). Hover/focus eases the speed to 0 over about 400ms (no abrupt stop); a pause button toggles it.
+- Implementation: one shared rAF ticker per section, running only while the section is in view and the tab is visible. It advances the track offset (`translate3d`) and writes each card's transform/opacity from cached geometry (card centers measured on resize, never per frame). Hover and focus ease the row's speed to 0 over about 400ms (no abrupt stop). **No visible pause button** (the owner called it a temporary-looking control): every row is focusable (`tabindex="0"`, an `aria-label` that says hover or focus stops it), so keyboard and pointer users can stop it, and reduced motion / Save-Data never move it.
 - Two identical sets for the seamless wrap; the duplicate set is `aria-hidden` and `inert`.
 - Reduced motion / Save-Data: no ticker, no lens; a swipeable static row with the edge fade.
+
+## 10. Self-playing showcase (cases + stage)
+
+The owner's rule (review 02): **the UI plays through its items itself; it never waits for the visitor to click.** A list of cases beside a stage is a little film, not a tab control.
+
+- Auto-advance every 6.5s (DWELL); the comparison sweep plays at the start of each case. Pause while the pointer (mouse) or keyboard focus is inside the section, while it is less than 35% in view, in a hidden tab, and under reduced motion (then it is a static, clickable list). A click selects a case and restarts its dwell.
+- A case still loading keeps its turn with the skeleton; a failed case is skipped after its dwell.
+- All cases' media stay mounted and stacked, so the next case is already decoded when its turn comes; cross-fade the pairs (opacity, `will-change: opacity`: without it Chrome reported the fade to an empty case as a 0.07 layout shift).
+- Titles that change per case all sit in one grid cell (`grid-area: 1/1`), so the heading keeps the tallest title's height; any text that changes during autoplay must not change layout (shifts without input count toward CLS).
+- **Active state is a surface and border step, nothing else.** No gradient bars, side lines or progress lines inside cards (section 11).
+
+## 11. No accent lines in cards; glows use all three brand colors
+
+- **No decorative lines (review 02).** A gradient or colored bar on a card edge, a side stripe on the active item, a thin line under a card title: the owner calls this "AI slop" and it is banned in the entire UI. State is shown with surface, border, text color and motion. Functional lines stay: a real progress indicator or usage meter (mark it `data-progress`), a connector that is part of an explainer diagram (mark it `data-diagram`), the comparison divider, form focus rings. The audit fails `DECORATIVE_ACCENT_BAR`.
+- **Pointer glow color rotates.** Luma's gradient has three colors (purple `#8B1BAD`, magenta `#ED457B`, orange `#FF9024`); a hover glow that is always one of them reads as a single purple brand. Each card the pointer enters picks one of the three at random, never the same as the previous card, and writes it as `--glow-c` on the card; the glow is `radial-gradient(240px circle at var(--glow-x) var(--glow-y), color-mix(in srgb, var(--glow-c) 16%, transparent), transparent 70%)`. One glowing card at a time. Applies to every grid of cards on every page.
 
 ## 9. Mobile menu sheet
 

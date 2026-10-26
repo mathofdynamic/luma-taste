@@ -72,6 +72,32 @@ Format: **what was shipped → why it was rejected → the rule → how to check
 19. **Testimonial lens at 375px showed one swinging card.** The lens was normalized by half the viewport (about one card at 375px).
     - Rule: lens radius `max(viewport / 2, 1.5 × card width)`; check the lens in a 375px viewport screenshot.
 
+## Review 02 (home page, screenshots)
+
+20. **Typed prompt revealed both lines at once.** The hero composer wiped the whole prompt block with one `clip-path`, so a two-line prompt appeared on both lines simultaneously. The skill itself prescribed that wipe.
+    - Rule: type word by word in reading order; words keep their layout (opacity only); caret on the word being written. See `signature-patterns.md` §4.
+    - Check: audit `MULTILINE_WIPE`.
+21. **Gradient line on the active showcase card.** "Adding lines in the cards is so AI slop": banned in the entire UI.
+    - Rule: no decorative accent lines; state is surface, border, text color and motion. See `signature-patterns.md` §11.
+    - Check: audit `DECORATIVE_ACCENT_BAR`.
+22. **The showcase waited for clicks.** "The UI itself must act in a loop, not wait for us to play through."
+    - Rule: any set of cases/scenes plays itself (pause on hover/focus, off-screen, reduced motion). See `signature-patterns.md` §10.
+    - Check: audit `SHOWCASE_WAITS_FOR_CLICK` (genuine filters carry `data-user-choice`).
+23. **The gallery did not respect the page grid.** CSS `columns` left a column empty when a batch came back short, so the masonry stopped at three of four columns.
+    - Rule: JS-distributed grid columns on the page grid; measure container edges at 4 widths. See `signature-patterns.md` §6 and `layout-and-components.md` §1.
+24. **Hover glow was always one color (read as purple).** Luma has three brand colors.
+    - Rule: each card entered glows purple, magenta or orange at random, never the same twice in a row. See `signature-patterns.md` §11.
+25. **Lens marquee had no room, and a pause button looked temporary.**
+    - Rule: the marquee runs full bleed (the one content exception to the container); no pause button, rows stop on hover/focus. See `signature-patterns.md` §8.
+26. **Praise: the bento micro-animations ("تجربه نهایت قدرت")** are the benchmark for every other page. See `layout-and-components.md` §6 "Motion benchmark".
+
+### Found while verifying review 02 (not raised by the owner, same class of mistake: things that move the page)
+27. **Lazy sections collapsed and jumped.** `next/dynamic` with `ssr: false` renders null while loading (not the Suspense fallback), so the reserved block went to 0px and back: CLS 0.25 for anyone scrolling. The reserves were also 100 to 1,400px shorter than the real sections.
+    - Rule: pass a `loading` placeholder; reserve each lazy section's real height per breakpoint (base + percent padding fitted to measured heights, slightly under). See `performance-and-verification.md` §2.
+    - Check: audit `SCROLL_LAYOUT_SHIFT`.
+28. **Loading shimmer and comparison sweep counted as layout shift.** A translated highlight box and a divider animated with `left` both registered as shifts every pass.
+    - Rule: shimmer animates `background-position` on a fixed layer; the divider moves with `transform`. See `signature-patterns.md` §5 and §6.
+
 ## Pre-delivery checklist (state the result of each line in the report)
 
 - [ ] Hero demo cycles through at least 4 tools with real results; paused off-screen; static frame names several tools.
@@ -88,3 +114,9 @@ Format: **what was shipped → why it was rejected → the rule → how to check
 - [ ] Explainer stories are legible, play on view, repeat while in view, no replay buttons.
 - [ ] Testimonials: edge fade and lens effect (also at 375px: neighbors peek, the centered card is flat); pause on hover/focus; reduced motion = swipeable static row.
 - [ ] Idle at the top for 12s: nothing moves the layout (`IDLE_LAYOUT_SHIFT` clean).
+- [ ] Fast scroll from top to bottom at 375 and 1440: total layout shift 0.01 or less (`SCROLL_LAYOUT_SHIFT` clean), including lazy sections and loading media.
+- [ ] Typed text appears word by word in reading order (`MULTILINE_WIPE` clean).
+- [ ] No decorative accent lines anywhere (`DECORATIVE_ACCENT_BAR` clean); card glows rotate the three brand colors.
+- [ ] Every showcase / scene set plays itself (`SHOWCASE_WAITS_FOR_CLICK` clean).
+- [ ] Every section's content edges equal the container edges at 375, 768, 1024, 1440 (the full-bleed marquee excepted).
+- [ ] Explainer sections reach the bento benchmark (playing films, not twitches).

@@ -10,7 +10,9 @@
  * Checks (exit code 1 if any FAIL): loops running off-screen, clipped/ellipsized text, horizontal overflow,
  * text < 12px, letter-spacing on Persian text, reduced-motion behavior, no-JS visibility, entrance timing
  * (Luma: about 600ms; under 400ms fails), premature reveals (below-the-fold content already visible at load,
- * which means either everything animated at load or the later reveal will blink).
+ * which means either everything animated at load or the later reveal will blink), layout shift during idle and
+ * during a fast scroll (lazy sections, loading media), multi-line text revealed by one wipe, decorative accent
+ * bars, and showcases that wait for a click instead of playing themselves (owner review 02).
  * Writes <out>/motion-audit.json and <out>/motion-audit.md, plus seam frames with --seam.
  */
 import fs from 'node:fs';
@@ -49,7 +51,7 @@ const chromium = pw.chromium || pw.default?.chromium;
 function revealRecorder() {
   const shifts = (window.__lmShifts = []); // layout shifts without input: a looping demo must never move the page
   try {
-    new PerformanceObserver((list) => list.getEntries().forEach((e) => { if (!e.hadRecentInput) shifts.push({ value: e.value, sources: (e.sources || []).map((s) => s.node && s.node.nodeType === 1 ? s.node.tagName.toLowerCase() + (s.node.classList[0] ? '.' + s.node.classList[0] : '') : '').filter(Boolean) }); }))
+    new PerformanceObserver((list) => list.getEntries().forEach((e) => { if (!e.hadRecentInput) shifts.push({ value: e.value, sources: (e.sources || []).map((s) => { if (!s.node) return ''; const el = s.node.nodeType === 1 ? s.node : s.node.parentElement; const id = el ? (el.closest('[data-landing-v2],section[id],[id]')?.getAttribute('data-landing-v2') || el.closest('[id]')?.id || '') : ''; const name = s.node.nodeType === 1 ? s.node.tagName.toLowerCase() + [...s.node.classList].slice(-1).map((c) => '.' + c).join('') : (s.node.nodeName || '') + (el ? ' in .' + [...el.classList].slice(-1).join('') : ''); return `${name}${id ? ' @' + id : ''} y${Math.round(s.previousRect.y)}->${Math.round(s.currentRect.y)} h${Math.round(s.previousRect.height)}->${Math.round(s.currentRect.height)}`; }).filter(Boolean) }); }))
       .observe({ type: 'layout-shift', buffered: true });
   } catch {}
   const log = (window.__lmRevealLog = []);
@@ -111,7 +113,7 @@ function auditPage(margin = 0) {
       infinite, duration: t.duration, delay: t.delay, direction: t.direction, easing: t.easing,
       properties: [...props], paintOnly: [...props].filter((p) => !COMPOSITOR.has(p)),
       playState: a.playState, targetInView: target ? inView(target, margin) : false,
-      loading: !!target?.closest?.('[data-loop=skeleton]'), // transient loading shimmer: exempt from the decorative budget
+      loading: !!target?.closest?.('[data-loop=skeleton],[data-loop=placeholder]'), // transient loading shimmer: exempt from the decorative budget
     };
   });
   const loops = animations.filter((a) => a.infinite);
@@ -157,6 +159,43 @@ function auditPage(margin = 0) {
   };
 }
 
+/* Multi-line text revealed by one clip-path wipe: every line appears at once (owner review 02). Type word by word. */
+function wipeProbe() {
+  // Group line boxes by vertical overlap: a fallback-font glyph (a checkmark) sits a few px off its line's top.
+  const lines = (el) => { const r = document.createRange(); r.selectNodeContents(el); let n = 0, bottom = -Infinity; [...r.getClientRects()].filter((x) => x.width > 1 && x.height > 1).sort((a, b) => a.top - b.top).forEach((x) => { if (x.top >= bottom - 2) { n++; bottom = x.bottom; } else bottom = Math.max(bottom, x.bottom); }); return n; };
+  return document.getAnimations().filter((a) => {
+    const el = a.effect?.target; if (!(el instanceof Element) || !el.textContent.trim()) return false;
+    let clip = false; try { clip = a.effect.getKeyframes().some((k) => 'clipPath' in k || 'clip-path' in k); } catch {}
+    return clip && a.playState === 'running' && lines(el) > 1;
+  }).map((a) => { const el = a.effect.target; return `${el.tagName.toLowerCase()}${el.classList[0] ? '.' + el.classList[0] : ''} "${el.textContent.trim().slice(0, 30)}"`; });
+}
+/* Decorative accent bars: thin colored/gradient lines inside rounded cards ("AI slop", owner review 02).
+   Functional lines are exempt: [data-progress] (real progress/usage meters), [data-diagram] (connectors inside an
+   explainer illustration), [role=progressbar], [role=slider] (comparison divider). */
+function accentProbe() {
+  const out = [];
+  const colored = (cs) => {
+    if (/gradient\(/.test(cs.backgroundImage)) return true;
+    const m = cs.backgroundColor.match(/rgba?\(([^)]+)\)/); if (!m) return false;
+    const [r, g, b, a = 1] = m[1].split(/[ ,\/]+/).filter(Boolean).map(Number);
+    return a > 0.3 && Math.max(r, g, b) - Math.min(r, g, b) > 60;
+  };
+  const rounded = (el) => { for (let n = el, d = 0; n && d < 3; n = n.parentElement, d++) if (parseFloat(getComputedStyle(n).borderTopLeftRadius) >= 8) return true; return false; };
+  document.querySelectorAll('body *').forEach((el) => {
+    if (el instanceof SVGElement || el.closest('[data-progress],[data-diagram],[role=progressbar],[role=slider]')) return;
+    for (const pseudo of [null, '::before', '::after']) {
+      const cs = getComputedStyle(el, pseudo);
+      if (cs.display === 'none' || (pseudo && (cs.content === 'none' || cs.content === 'normal'))) continue;
+      const w = parseFloat(cs.width), h = parseFloat(cs.height);
+      if (!(w > 0 && h > 0)) continue;
+      if (!((w <= 4 && h >= 16) || (h <= 4 && w >= 16))) continue;
+      if (!colored(cs) || !rounded(pseudo ? el : el.parentElement || el)) continue;
+      out.push(`${el.tagName.toLowerCase()}${el.classList[0] ? '.' + el.classList[0] : ''}${pseudo || ''} (${Math.round(w)}x${Math.round(h)})`);
+    }
+  });
+  return out;
+}
+
 const findings = []; // {level, check, where, detail}
 const add = (level, check, where, detail) => findings.push({ level, check, where, detail });
 const seams = [];
@@ -195,7 +234,9 @@ for (const width of widths) {
     themeEvidence.push({ where, bg });
     { // idle at the top: auto-playing demos (hero studio, stories, marquees) must not shift layout
       await page.evaluate(() => window.__lmShifts.splice(0));
-      await page.waitForTimeout(12000); // long enough for a hero demo to reach its second scene
+      const wipes = new Set();
+      for (let i = 0; i < 40; i++) { (await page.evaluate(wipeProbe)).forEach((w) => wipes.add(w)); await page.waitForTimeout(300); } // 12s: long enough for a hero demo to reach its second scene
+      wipes.forEach((w) => add('FAIL', 'MULTILINE_WIPE', where, `${w} is revealed by one clip-path wipe across several lines (all lines appear at once); type it word by word in reading order (signature-patterns.md section 4)`));
       const idle = await page.evaluate(() => window.__lmShifts.splice(0));
       const sum = idle.reduce((t, e) => t + e.value, 0);
       if (sum > 0.005) add('FAIL', 'IDLE_LAYOUT_SHIFT', where, `layout shifted by ${sum.toFixed(4)} in 12s with no input (sources: ${[...new Set(idle.flatMap((e) => e.sources))].slice(0, 4).join(', ') || 'unknown'}); reserve the space a loop needs (text that wraps differently per scene/phase, carets, badges)`);
@@ -213,7 +254,9 @@ for (const width of widths) {
       if (r.runningLoopsInView > maxInView) { maxInView = r.runningLoopsInView; maxNames = r.runningLoopNames; }
       if (r.overflowX) add('FAIL', 'OVERFLOW_X', where, `scrollWidth ${r.scrollWidth} > viewport at scrollY ${r.scrollY}`);
       r.runningLoopsOffscreen.forEach((a) => add('FAIL', 'LOOP_RUNS_OFFSCREEN', where, `${a.target} (${a.name}) is running while off-screen`));
-      r.loops.forEach((a) => a.paintOnly.length && !a.target.includes('lm-gradient-word') && add('WARN', 'LOOP_PAINT_PROPERTY', where, `${a.target} animates ${a.paintOnly.join(', ')} (paint-heavy: use transform/opacity; the only sanctioned exception is .lm-gradient-word, in view only)`));
+      r.loops.forEach((a) => a.paintOnly.length && !a.target.includes('lm-gradient-word') && !(a.loading && a.paintOnly.every((p) => p.startsWith('background-position'))) && add('WARN', 'LOOP_PAINT_PROPERTY', where, `${a.target} animates ${a.paintOnly.join(', ')} (paint-heavy: use transform/opacity; sanctioned exceptions: .lm-gradient-word in view, and a loading shimmer's background-position)`));
+      (await page.evaluate(wipeProbe)).forEach((w) => add('FAIL', 'MULTILINE_WIPE', where, `${w} is revealed by one clip-path wipe across several lines; type it word by word`));
+      (await page.evaluate(accentProbe)).forEach((b) => add('FAIL', 'DECORATIVE_ACCENT_BAR', where, `${b}: a thin colored/gradient line inside a card (banned as "AI slop"; show state with surface and border, mark a real progress line data-progress, a diagram connector data-diagram)`));
       r.text.forEach((t) => {
         const k = t.el + t.sample; if (seenText.has(k)) return; seenText.set(k, 1);
         if (t.clipped) add('FAIL', 'TEXT_CLIPPED', where, `${t.el} "${t.sample}"`);
@@ -238,6 +281,20 @@ for (const width of widths) {
       await page.waitForTimeout(3000);
       const stuck = await page.evaluate(() => document.getAnimations().filter((a) => a.playState === 'running' && a.effect?.getTiming().iterations === Infinity).map((a) => a.effect.target?.closest?.('[data-loop=skeleton]')).filter((el) => el && [...el.querySelectorAll('img')].some((i) => i.complete && i.naturalWidth > 0)).length);
       if (stuck) add('FAIL', 'SKELETON_AFTER_LOAD', where, `${stuck} loading shimmer(s) still running over a decoded image (remove data-loop="skeleton" / data-loading on load and on error)`);
+    }
+    if (theme === themes[0]) { // sets of 3+ pressed/selected buttons are showcases: they must play themselves
+      const groups = await page.evaluate(() => {
+        const parents = new Map();
+        document.querySelectorAll('button[aria-pressed], [role=tab][aria-selected]').forEach((b) => { if (b.closest('[data-user-choice],nav,header,footer,dialog')) return; const p = b.parentElement; parents.set(p, [...(parents.get(p) || []), b]); });
+        return [...parents].filter(([, bs]) => bs.length >= 3).map(([p], i) => { p.setAttribute('data-lm-group', String(i)); return String(i); });
+      });
+      for (const g of groups) {
+        const pick = () => page.evaluate((id) => [...document.querySelector(`[data-lm-group="${id}"]`).querySelectorAll('button[aria-pressed], [role=tab][aria-selected]')].findIndex((b) => b.getAttribute('aria-pressed') === 'true' || b.getAttribute('aria-selected') === 'true'), g);
+        await page.evaluate((id) => document.querySelector(`[data-lm-group="${id}"]`).scrollIntoView({ block: 'center' }), g);
+        await page.mouse.move(1, 1); await page.waitForTimeout(500);
+        const a = await pick(); await page.waitForTimeout(9000); const b = await pick();
+        if (a === b) add('FAIL', 'SHOWCASE_WAITS_FOR_CLICK', where, `group ${g} (${await page.evaluate((id) => { const p = document.querySelector(`[data-lm-group="${id}"]`); return p.getAttribute('aria-label') || p.className.toString().split(' ')[0]; }, g)}) kept item ${a} selected for 9s in view: a showcase must play through its items itself (signature-patterns.md section 10); mark genuine filters data-user-choice. If its media was still loading, re-run before treating this as real.`);
+      }
     }
     if (maxInView > 4) add('WARN', 'MANY_CONCURRENT_LOOPS', where, `${maxInView} infinite animations running at once (budget: 3-4 on mobile): ${maxNames.slice(0, 10).join(', ')}`);
     if (errors.length) add('FAIL', 'CONSOLE_ERRORS', where, errors.slice(0, 3).join(' | '));
@@ -287,6 +344,28 @@ for (const width of widths) {
     }
     await ctx.close();
   }
+}
+
+// Fast scroll, fresh page per width: lazy sections mounting late, media loading and autoplay must not move the
+// page. A slow scripted pass hides this because every section has mounted before it is reached.
+for (const width of widths) {
+  const where = `${width}px/fast-scroll`;
+  const ctx = await browser.newContext({ viewport: { width, height: width < 600 ? 800 : 900 }, deviceScaleFactor: 1 });
+  await ctx.addInitScript(revealRecorder);
+  const page = await ctx.newPage();
+  await page.goto(url, { waitUntil: 'load' });
+  await page.waitForTimeout(1000);
+  await page.evaluate(() => window.__lmShifts.splice(0));
+  for (let y = 0; y < await page.evaluate(() => document.documentElement.scrollHeight); y += Math.round(page.viewportSize().height * 0.5)) {
+    await page.evaluate((yy) => scrollTo(0, yy), y); await page.waitForTimeout(150);
+  }
+  await page.waitForTimeout(4000);
+  const shifts = await page.evaluate(() => window.__lmShifts.splice(0));
+  const sum = shifts.reduce((t, e) => t + e.value, 0);
+  const sources = [...new Set(shifts.flatMap((e) => e.sources))].slice(0, 5).join(', ') || 'unknown';
+  if (sum > 0.05) add('FAIL', 'SCROLL_LAYOUT_SHIFT', where, `layout shifted by ${sum.toFixed(4)} during a fast scroll with no input (sources: ${sources}); reserve lazy sections' real height, give next/dynamic ssr:false a loading placeholder, reserve loading batches, move dividers/shimmers with transform/background-position (performance-and-verification.md section 2)`);
+  else if (sum > 0.01) add('WARN', 'SCROLL_LAYOUT_SHIFT', where, `layout shifted by ${sum.toFixed(4)} during a fast scroll (sources: ${sources})`);
+  await ctx.close();
 }
 
 if (themes.length > 1) { // prove the theme switch really changed the page (otherwise dark and light would be the same audit twice)

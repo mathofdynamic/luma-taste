@@ -2,7 +2,8 @@
 
 ## 1. The page grid is law
 
-- One container: `.lt-container` (max 1200px, side padding 20 / 32 / 48px by breakpoint). Every section's content sits inside it. Full-bleed backgrounds are allowed; **content** is not.
+- One container: `.lt-container` (max 1200px, side padding 20 / 32 / 48px by breakpoint). Every section's content sits inside it. Full-bleed backgrounds are allowed; **content** is not. The only content exception is the testimonial lens marquee, which runs edge to edge (`signature-patterns.md` section 8).
+- **Measure the edges, do not eyeball them (review 02).** For every section, the first and last content boxes (header, grid, masonry columns) must start and end exactly at the container's content edges at 375, 768, 1024 and 1440px. A layout that can leave a column empty (CSS `columns`, auto-fill with too few items) breaks this at runtime even when the CSS looks right; see `signature-patterns.md` section 6.
 - 12-column grid (`.lt-grid`, gutter 16 to 24px). Mobile: 4 effective columns (cards span 6 of 12 for 2-up, or 12 for 1-up). Tablet: 8. Desktop: 12.
 - Cards, media and text blocks start and end on column edges. Do not nudge elements by arbitrary pixels, and do not center one block inside a left-aligned flow unless it is a short headline block.
 - Equal-height rows: `align-items: stretch`; cards in one row share height by the grid, never by a fixed `height`.
@@ -29,7 +30,7 @@ Build once, reuse everywhere. Same tokens as `identity-and-tokens.md`.
 |---|---|
 | Button, primary | `--text` fill, `--bg` label, pill, min height 44px, 500 weight; one primary per view. Hover: **liquid fill** of the inverse color rising from the bottom as a curved wave (450ms `--lm-ease-move`) while the label flips color; leaving drains it. Press scale .97 (`.lm-press`). Recipe: `signature-patterns.md` section 3 |
 | Button, secondary | transparent, 1px `--border-strong`, pill; hover: the same liquid fill in `--surface-2` (subtler), border to `--text-3` |
-| Card (`.lm-card`) | `--surface-1`, 1px `--border`, 20px radius, 20 to 24px padding; hover raises border and surface by one step, plus the card's own icon story |
+| Card (`.lm-card`) | `--surface-1`, 1px `--border`, 20px radius, 20 to 24px padding; hover raises border and surface by one step, plus the card's own icon story and a pointer glow whose color rotates through purple / magenta / orange (`signature-patterns.md` section 11). **No accent bars or edge lines, ever**; a selected card is one surface and border step up |
 | Badge / eyebrow | pill, `--surface-1`, 1px border, 12px minimum; use only when it carries information |
 | Nav | sticky glass header (blur + low opacity), 56px mobile / 64px desktop; **active item = pill** (`--surface-2` fill + 1px `--border-strong`, `--text` label), hover = lighter pill, **no underlines**; dropdowns: hover intent, one morphing glass panel sliding between triggers, icon + label (+ one-line description) items that stagger in; mobile menu: standout sheet with scrim (`signature-patterns.md` sections 1 and 9) |
 | Theme toggle | 44px round icon button showing sun/moon (not a glyph character); switching reveals the new theme in a circle from the button (`signature-patterns.md` section 2) |
@@ -53,7 +54,7 @@ The baseline is a neutral border/surface change. On top of it, the icon or illus
 | افزایش کیفیت ویدیو (video upscale) | film frame ticks: sprocket marks slide one step |
 | ساخت ویدیو (video creation) | camera slides slightly and a play triangle pulses |
 | Primary CTA | arrow slides toward the reading direction by 4px; press scale .97 |
-| Nav link | underline draws from the reading start (scaleX with `transform-origin` at start) |
+| Nav link | a light pill fades in behind the item (never an underline; the active item keeps the stronger pill) |
 | Gallery tile | image scales 1.04 in a clipped frame; play badge scales in |
 | Testimonial marquee | pauses (eases to a stop); the focused card lifts 2px |
 | Menu item (dropdown or mobile) | icon plays the service's hover story; highlight pill under the pointer |
@@ -78,7 +79,7 @@ The owner rejected short twitches (300ms) and "replay" buttons. Every explainer 
 | Fair-pay model | the infinity stroke draws, a credit dot travels the loop, the "no expiry" chip pops, a usage meter fills only as far as used |
 | Prompt enhancer | a short idea chip, a wand sweep, then the detailed prompt appears as tags (style, light, lens, mood) popping in one by one |
 | API / code card | code lines type in sequence with a blinking cursor (gated), then a response line slides in |
-| Showcase (before/after) | the divider sweeps once on view to invite interaction, then follows the pointer |
+| Showcase (before/after) | plays itself through every case (section 10 of `signature-patterns.md`); the divider sweeps at each case, then follows the pointer while hovered (which pauses the autoplay) |
 
 Plain text-only explainers get one playful touch: an underline that draws under the key phrase, an icon that settles into place, or a line that fills as the section enters.
 
@@ -86,9 +87,10 @@ Plain text-only explainers get one playful touch: an underline that draws under 
 
 - **Hero:** headline (H1 with the animated gradient word) in the CSS-only load sequence (transform-only rise for the H1 so LCP is not delayed); one primary (liquid fill) and one secondary CTA; a **studio demo that cycles through several tools** with real results (`signature-patterns.md` section 4), not a single-tool card and not an empty mock; one static glow behind. The H1 text is the LCP element: server-rendered, no large media as LCP. Height at most 100svh on mobile (the demo may start below the fold on phones).
 - **Services grid:** 2 columns on mobile, 4 on desktop; icon plate, title, full description; whole card is the link; all service links stay in the server-rendered HTML; extra services behind "مشاهده همه".
-- **Gallery:** 2-column masonry on mobile, 3 to 4 on desktop; 12 tiles first, then load more; poster-first video; skeleton tiles in masonry shapes while loading; tiles reveal as each image decodes.
+- **Gallery:** 2-column masonry on mobile, 3 on tablet, 4 on desktop, columns on the page grid and distributed in JS (never CSS `columns`); 12 tiles first, then load more; each batch reserves its height before data arrives; poster-first video; skeleton tiles while loading; tiles reveal as each image decodes (`signature-patterns.md` section 6).
 - **Bento / explainer:** different card sizes for hierarchy; each card has its story (section 5).
-- **Testimonials:** lens marquee with edge fades (`signature-patterns.md` section 8), two rows on desktop (opposite directions), one row on mobile; reduced motion becomes a swipeable scroller.
-- **Showcase (before/after):** text column with the use cases as selectable cards (title + one-line description) so it balances the media column; media 4/3 or 1/1 on desktop; pointer-following comparison.
+- **Testimonials:** full-bleed lens marquee with edge fades (`signature-patterns.md` section 8), two rows on desktop (opposite directions), one row on mobile; no pause button (hover/focus stops a row); reduced motion becomes a swipeable scroller.
+- **Showcase (before/after):** text column with the use cases as cards (title + one-line description) so it balances the media column; media 4/3 or 1/1 on desktop; pointer-following comparison; **it cycles through the cases by itself** (`signature-patterns.md` section 10).
+- **Motion benchmark (review 02):** the owner singled out the bento explainers ("تجربه نهایت قدرت" on the home page, `components/landing-v2/Bento.tsx` + `bento.module.css`) as the level of micro-animation every page should reach: each card a short readable film that plays in view, repeats, replays on hover, and rests on its finished frame. When building a new page, start its feature/explainer sections from that implementation.
 - **Final CTA:** one headline with the gradient word, supporting line, primary and secondary pills, one static glow; floating decoration only on desktop and static or gated.
 - **Footer:** accordion link groups on mobile (all links in server HTML), fixed-size lazy trust badges, 44px touch targets.

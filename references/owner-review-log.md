@@ -98,6 +98,19 @@ Format: **what was shipped → why it was rejected → the rule → how to check
 28. **Loading shimmer and comparison sweep counted as layout shift.** A translated highlight box and a divider animated with `left` both registered as shifts every pass.
     - Rule: shimmer animates `background-position` on a fixed layer; the divider moves with `transform`. See `signature-patterns.md` §5 and §6.
 
+## Review 03 (home page)
+
+29. **"The section below has no entrance at all."** On desktop the services header (and on 1920px the first card row) is visible at load. The scroll reveal marks visible content as revealed without animating it, so the whole section looked static while every other section animated.
+    - Rule: content visible at load continues the hero's CSS load cascade; the scroll reveal handles the rest. See `motion-system.md` §4.
+    - Check: audit `FIRST_SCREEN_STATIC`; look at 1440×900 and 1920×1080, not only 375.
+
+### Found while verifying review 03 (things that move the page)
+30. **`content-visibility: auto` jumped the page.** The bento's `contain-intrinsic-size: auto 1600px` was 900px short at 375px; when it rendered during a fast scroll the page moved (CLS 0.04 to 0.06).
+    - Rule: no `content-visibility` estimates on sections. See `performance-and-verification.md` §2 item 8.
+31. **Lazy section reserves were 15 to 85px off.** Heights change with each line wrap, so no CSS formula matches them, and the error shows when a slow chunk mounts the section in view.
+    - Rule: mount lazy sections at idle after load as well as on approach. See `performance-and-verification.md` §2.
+    - Check: audit `SCROLL_LAYOUT_SHIFT`; repeat the fast scroll several times, because it is timing-dependent (it failed 2 of 5 runs).
+
 ## Pre-delivery checklist (state the result of each line in the report)
 
 - [ ] Hero demo cycles through at least 4 tools with real results; paused off-screen; static frame names several tools.
@@ -108,6 +121,7 @@ Format: **what was shipped → why it was rejected → the rule → how to check
 - [ ] Theme switch reveals in a circle from the toggle; instant under reduced motion.
 - [ ] Primary buttons use the liquid fill hover; press scale on all buttons.
 - [ ] Entrances: about 600ms, per element on scroll, no blink, nothing below the fold revealed at load, and nothing still hidden at the very bottom (footer included).
+- [ ] Everything visible in the first screen animates in, at 1440×900 and 1920×1080 too (`FIRST_SCREEN_STATIC` clean).
 - [ ] No dead space in two-column sections at 1024 and 1440.
 - [ ] Comparisons follow the pointer; no slider under media; keyboard arrows work.
 - [ ] Media tiles: skeleton while loading, smooth reveal on decode, fallback on error.

@@ -5,11 +5,12 @@
     "identicalSeams": 8
   },
   "broken": {
-    "fails": 81,
+    "fails": 84,
     "expectedChecks": [
       "BACKDROP_PREFIX_ONLY",
       "DECORATIVE_ACCENT_BAR",
       "ENTRANCE_TOO_FAST",
+      "FIRST_SCREEN_STATIC",
       "IDLE_LAYOUT_SHIFT",
       "LOOP_RUNS_OFFSCREEN",
       "MULTILINE_WIPE",
@@ -28,6 +29,7 @@
       "BACKDROP_PREFIX_ONLY",
       "DECORATIVE_ACCENT_BAR",
       "ENTRANCE_TOO_FAST",
+      "FIRST_SCREEN_STATIC",
       "IDLE_LAYOUT_SHIFT",
       "LOOP_RUNS_OFFSCREEN",
       "MULTILINE_WIPE",
@@ -56,5 +58,5 @@
   ],
   "themeAttr": "class",
   "enterMs": 600,
-  "verifiedOn": "2026-10-23"
+  "verifiedOn": "2026-10-27"
 }

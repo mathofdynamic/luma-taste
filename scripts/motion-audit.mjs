@@ -54,6 +54,17 @@ function revealRecorder() {
     new PerformanceObserver((list) => list.getEntries().forEach((e) => { if (!e.hadRecentInput) shifts.push({ value: e.value, sources: (e.sources || []).map((s) => { if (!s.node) return ''; const el = s.node.nodeType === 1 ? s.node : s.node.parentElement; const id = el ? (el.closest('[data-landing-v2],section[id],[id]')?.getAttribute('data-landing-v2') || el.closest('[id]')?.id || '') : ''; const name = s.node.nodeType === 1 ? s.node.tagName.toLowerCase() + [...s.node.classList].slice(-1).map((c) => '.' + c).join('') : (s.node.nodeName || '') + (el ? ' in .' + [...el.classList].slice(-1).join('') : ''); return `${name}${id ? ' @' + id : ''} y${Math.round(s.previousRect.y)}->${Math.round(s.currentRect.y)} h${Math.round(s.previousRect.height)}->${Math.round(s.currentRect.height)}`; }).filter(Boolean) }); }))
       .observe({ type: 'layout-shift', buffered: true });
   } catch {}
+  // First screen: text and cards visible at load must play an entrance (owner review 03: the section under the hero
+  // sat static because the scroll reveal leaves already-visible content alone).
+  const animated = (window.__lmAnimated = new WeakSet());
+  document.addEventListener('animationstart', (e) => animated.add(e.target), true);
+  document.addEventListener('DOMContentLoaded', () => requestAnimationFrame(() => {
+    window.__lmFirstScreen = [...document.querySelectorAll('main :is(h1,h2,h3,p,[data-reveal])')].filter((el) => {
+      if (el.closest('header,nav,footer,dialog,[aria-hidden=true],[inert]')) return false;
+      const r = el.getBoundingClientRect(), cs = getComputedStyle(el);
+      return r.width > 0 && r.height > 0 && r.top < innerHeight && r.bottom > 0 && cs.visibility !== 'hidden' && el.textContent.trim();
+    });
+  }));
   const log = (window.__lmRevealLog = []);
   const name = (el) => (el.id ? '#' + el.id : el.tagName.toLowerCase() + (el.classList[0] ? '.' + el.classList[0] : ''));
   const keep = (el, props, ms) => {
@@ -64,6 +75,7 @@ function revealRecorder() {
   const animate = Element.prototype.animate;
   Element.prototype.animate = function (keyframes, options) {
     const a = animate.call(this, keyframes, options);
+    animated.add(this);
     try {
       const props = new Set();
       a.effect.getKeyframes().forEach((k) => Object.keys(k).forEach((p) => { if (!['offset', 'easing', 'composite', 'computedOffset'].includes(p)) props.add(p); }));
@@ -196,6 +208,13 @@ function accentProbe() {
   return out;
 }
 
+// Third-party beacons (analytics) can hang for minutes on some networks, so network idle may never come: fall back
+// to the load event plus a short settle instead of aborting the whole audit.
+async function gotoSettled(page) {
+  try { await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 }); }
+  catch (e) { if (e.name !== 'TimeoutError') throw e; await page.waitForLoadState('load'); await page.waitForTimeout(2000); }
+}
+
 const findings = []; // {level, check, where, detail}
 const add = (level, check, where, detail) => findings.push({ level, check, where, detail });
 const seams = [];
@@ -212,7 +231,7 @@ for (const width of widths) {
     const errors = [];
     page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
     page.on('pageerror', (e) => errors.push(String(e)));
-    await page.goto(url, { waitUntil: 'networkidle' });
+    await gotoSettled(page);
     if (!glassChecked) { // shipped CSS: a rule that kept only -webkit-backdrop-filter renders NO blur in Chromium/Firefox
       glassChecked = true;
       const sheets = await page.evaluate(() => [...document.styleSheets].map((s) => s.href || s.ownerNode?.textContent || ''));
@@ -229,6 +248,13 @@ for (const width of widths) {
       if (a === 'class') { el.classList.remove('light', 'dark'); el.classList.add(t); } // keep unrelated root classes
       else el.setAttribute(a, t);
     }, [themeAttr, theme]);
+    if (theme === themes[0]) {
+      const still = await page.evaluate(() => (window.__lmFirstScreen || []).filter((el) => {
+        for (let n = el; n && n !== document.body; n = n.parentElement) if (window.__lmAnimated.has(n)) return false;
+        return true;
+      }).map((el) => `${el.tagName.toLowerCase()}${el.classList[0] ? '.' + el.classList[0] : ''} "${el.textContent.trim().slice(0, 24)}"`));
+      if (still.length) add('FAIL', 'FIRST_SCREEN_STATIC', where, `${still.length} element(s) visible at load never animate in: ${still.slice(0, 5).join(', ')}. Content under the hero that is already on screen must continue the hero's CSS load sequence (motion-system.md section 4)`);
+    }
     await page.waitForTimeout(400);
     const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
     themeEvidence.push({ where, bg });
@@ -378,7 +404,7 @@ if (themes.length > 1) { // prove the theme switch really changed the page (othe
 {
   const ctx = await browser.newContext({ viewport: { width: 375, height: 800 }, reducedMotion: 'reduce' });
   const page = await ctx.newPage();
-  await page.goto(url, { waitUntil: 'networkidle' });
+  await gotoSettled(page);
   await page.waitForTimeout(500);
   const r = await page.evaluate(auditPage, margin);
   const running = r.loops.filter((a) => a.playState === 'running');
@@ -392,7 +418,11 @@ if (themes.length > 1) { // prove the theme switch really changed the page (othe
   const page = await ctx.newPage();
   await page.goto(url, { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => document.fonts.ready); // CSS/font readiness, without waiting forever for unrelated remote images
-  const hidden = await page.evaluate(() => [...document.querySelectorAll('[data-reveal]')].filter((el) => +getComputedStyle(el).opacity < 1).length);
+  // A CSS load entrance (hero and first-screen sections) is fine without JS once it ends: poll from here (page timers do
+  // not run with JS off) and still fail anything hidden after 3s.
+  const countHidden = () => page.evaluate(() => [...document.querySelectorAll('[data-reveal]')].filter((el) => +getComputedStyle(el).opacity < 1).length);
+  let hidden = await countHidden();
+  for (let waited = 0; hidden && waited < 3000; waited += 250) { await page.waitForTimeout(250); hidden = await countHidden(); }
   if (hidden) add('FAIL', 'NO_JS_HIDDEN_CONTENT', 'js-disabled', `${hidden} [data-reveal] elements are invisible without JavaScript`);
   await ctx.close();
 }

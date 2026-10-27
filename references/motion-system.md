@@ -79,6 +79,7 @@ Trigger rules for content reveals:
 - Entries that arrive in the same callback are sorted by DOM order and staggered (`--lm-i`).
 - The hidden state (`opacity:0; transform:translate3d(0,24px,0)`) is applied only to elements that are **below the viewport when JS boots**; elements already visible at boot are marked revealed without animation. This removes the "visible → hidden → animate" blink.
 - Above-the-fold content (hero) uses the CSS-only load sequence, so it never depends on JS and never blinks.
+- **Everything visible at load animates in, not only the hero (owner review 03).** On a wide screen the next section's header (and sometimes its first card row) is already in the first screen. The rule above leaves it static, so the section "has no entrance at all". Give that section's header, intro, action and first card row the same CSS load animation, continuing the hero's cascade (Luma home: 380ms, then +70ms each, `animation-fill-mode: backwards`, from `opacity:0; translate3d(0,24px,0)`). On phones it plays unseen and the scroll reveal takes over. Check at 1440×900 and 1920×1080. The audit fails this as `FIRST_SCREEN_STATIC`.
 
 | Element | Duration |
 |---|---|

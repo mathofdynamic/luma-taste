@@ -13,15 +13,16 @@ Luma is a Persian-first AI creativity platform. Its pages must feel **alive, pre
 
 ## When you are invoked
 
-Run these steps in order. Do not skip step 0, step 5 or step 6.
+Run these steps in order. Do not skip step 0, step 5, step 6 or step 7.
 
 0. **Audit what exists.** Read the target page's code. If the project has an earlier version of the page (git history or `main`), find the motion and interactions it used to have and list what is missing now. A previous performance pass may have removed signature motion; restoring it, cheaply, is part of the job. Record the shared components and styles the page uses so that changes do not leak onto other pages.
 1. **Read the owner review log** (`references/owner-review-log.md`). Every entry there is a mistake the owner already rejected on a real page. Treat each one as a rule for the page you are building, not as history.
-2. **Plan** (see `references/design-process.md`): write a compact plan with tokens, grid, a section list, and the **motion matrix** (below). Critique the plan against the generic defaults and the review log, revise, then build.
+2. **Plan** (see `references/design-process.md`): write a compact plan with tokens, grid, a section list, and the **motion matrix** (below). For every row of cards, write the cards per row and the resulting card width at 375, 1024 and 1440 and check them against the floors in `references/layout-and-components.md` §7 (a five-column row of 200px cards failed review 04). Critique the plan against the generic defaults and the review log, revise, then build.
 3. **Build on existing primitives.** Reuse the project's components, tokens and motion helpers. Do not create a competing system. Starter assets are in `assets/`; proven recipes for Luma's signature interactions are in `references/signature-patterns.md`. Adapt them to the project's architecture.
 4. **Motion and layout pass.** Fill the motion matrix for every section with the tool ladder and loop rules in `references/motion-system.md`. Snap everything to the grid, remove dead space, and make sure no text is cut off (`references/layout-and-components.md`).
-5. **Prove it.** Run `scripts/motion-audit.mjs`, check budgets, inspect rendered pages at 375px and 1440px in dark and light, and write the evidence report (`references/performance-and-verification.md`). Never claim "animation works" from reading code.
-6. **Review-log check.** Walk the checklist at the end of `references/owner-review-log.md` against the rendered page and state the result per line in the report.
+5. **Prove it.** Run `scripts/motion-audit.mjs`, check budgets, inspect rendered pages at 375px and 1440px in dark and light, and write the evidence report (`references/performance-and-verification.md`). Never claim "animation works" from reading code, and never treat a clean audit as "it looks right": the audit measures behaviour, not composition.
+6. **Section critique.** Look at every section alone, at native size, at rest and mid-motion (the audit writes these frames to `<out>/sections/`), answer the questions in "Section critique" in `references/owner-review-log.md`, and give each section a binary verdict: ship or fix. Then have a reviewer who did not build the page (a separate agent, or the owner) look at the same frames and name the three weakest things per section; fix or report all of it. Anything you notice and do not fix goes to the owner as a known issue, never "close enough".
+7. **Review-log check.** Walk the checklist at the end of `references/owner-review-log.md` against the rendered page and state the result per line in the report.
 
 ## Luma's non-negotiables
 
@@ -46,6 +47,7 @@ These come from the owner's reviews of the site. They override generic design ad
 17. **Nothing moves the page by itself.** Autoplay, lazy sections, loading media and sweeps must cause no layout shift while idle or scrolling: reserve real heights, stack changing labels in one cell, move with `transform`, shimmer with `background-position`. (`performance-and-verification.md` section 2.)
 18. **The bento explainers on the home page are the benchmark** for micro-animation on every new page (owner review 02).
 19. **Persian first.** RTL, logical properties, no letter-spacing on Persian text, readable line-height 1.8, real Persian copy.
+20. **Card rows are sized by their content, not by their item count (owner review 04).** Text-and-demo cards are at least 280px wide with demo stages of at least 220px, at most four per row; five or more items become 2 + 3 rows or a list beside one shared stage. Titles, text and demos share lines across a row, nothing inside a card is a hole, and a still frame of any story section looks finished. (`layout-and-components.md` §7.)
 
 ## The motion matrix (required deliverable)
 
@@ -77,12 +79,12 @@ Before building, fill this table for the page. Every row needs at least an entra
 
 | Read | When |
 |---|---|
-| `references/owner-review-log.md` | **Always.** Rejected patterns, the rule each one became, and the pre-delivery checklist |
+| `references/owner-review-log.md` | **Always.** Rejected patterns, the rule each one became, the section critique, and the pre-delivery checklist |
 | `references/identity-and-tokens.md` | Any visual work: colors, gradient rules, typography, Persian rules, materials, shape |
 | `references/motion-system.md` | Any animation: timing tokens, decision gate, tool ladder, easing, hover, scroll, loops, gestures |
 | `references/signature-patterns.md` | Building nav menus, theme switch, buttons, hero studio, comparison, media loading, explainer stories, lens marquee, mobile menu |
 | `references/entrance-motion-contract.md` | Progressive enhancement and surface state handling (its timing tokens are overridden by Luma) |
-| `references/layout-and-components.md` | Grid, dead space, cards, components, hover vocabulary, section recipes, no-clipped-text rule |
+| `references/layout-and-components.md` | Grid, dead space, cards, card rows and demo stages (§7), components, hover vocabulary, section recipes, no-clipped-text rule |
 | `references/performance-and-verification.md` | Budgets, how to keep rich motion cheap, the audit, the evidence report |
 | `references/design-process.md` | Planning, avoiding generic output, writing Persian UI copy, self-critique |
 
@@ -95,7 +97,9 @@ Assets: `assets/luma-tokens.css`, `assets/luma-motion.css`, `assets/luma-motion.
 - Entrances that fire for the whole page at load, that blink (visible, then hidden, then animated), or that are so fast nobody sees them (under 400ms for content reveals).
 - A loop that is not gated to the viewport, not seamless, or not reduced-motion safe.
 - `transition: all`; animating `margin`, `top`, `left`; `scale(0)` entrances; `ease-in` on UI. (`width`/`height` only for the sanctioned morphing menu panel, see `signature-patterns.md`.)
-- Text that is truncated, clipped, under 12px, or letter-spaced in Persian.
+- Text that is truncated, clipped, under 12px, or letter-spaced in Persian; paragraphs squeezed under about 20 characters per line.
+- A row of five or more equal text-and-demo cards; demo stages under 220px; rows whose titles, text or demos start at different heights; holes inside cards (`DEMO_TOO_SMALL`, `RAGGED_CARD_ROW`, `CARD_DEAD_GAP`).
+- A section judged only from a downscaled full-page capture, or a section critique verdict other than ship or fix.
 - Decorative accent lines in cards; a hover glow in a single color; a showcase that waits for clicks; a visible pause button on the marquee; multi-line text revealed by one wipe.
 - Layout shift without input, idle or while scrolling (`IDLE_LAYOUT_SHIFT`, `SCROLL_LAYOUT_SHIFT`).
 - A blur surface that is opaque or blur-only; a large full-screen `backdrop-filter` on mobile.
@@ -105,4 +109,4 @@ Assets: `assets/luma-tokens.css`, `assets/luma-motion.css`, `assets/luma-motion.
 
 ## Reporting
 
-End every task with: what changed and why, the motion matrix as built, files touched, the audit result (FAIL/WARN counts and anything accepted), budget numbers vs targets, screenshots for 375px and 1440px in dark and light, the review-log checklist result, and a clear list of what is verified in a browser versus what is not.
+End every task with: what changed and why, the motion matrix as built, files touched, the audit result (FAIL/WARN counts and anything accepted), budget numbers vs targets, screenshots for 375px and 1440px in dark and light, **the section critique table (your verdicts and the fresh-eyes reviewer's findings, with what changed)**, the review-log checklist result, and a clear list of what is verified in a browser versus what is not.

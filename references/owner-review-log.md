@@ -111,6 +111,33 @@ Format: **what was shipped → why it was rejected → the rule → how to check
     - Rule: mount lazy sections at idle after load as well as on approach. See `performance-and-verification.md` §2.
     - Check: audit `SCROLL_LAYOUT_SHIFT`; repeat the fast scroll several times, because it is timing-dependent (it failed 2 of 5 runs).
 
+## Review 04 — Image generation page (2026-10-29)
+
+32. **"مسیر خلق جادو" (five steps) shipped as five equal columns, and the author did not see the problem.** At 1440px each card was 202px wide: paragraphs ran 14 to 19 characters per line over 3 to 4 lines, a title wrapped to two lines, so the paragraphs and the 152px demo stages started at different heights in every card, with 59 to 100px holes between text and demo. The demos were too small to read, and a still of the section looked half-built (a half-typed prompt, an empty canvas, two steps with inverted badges and three without) because the steps play one after another. On phones the same five cards stacked to about two screens.
+    - Root cause (layout): five columns were chosen for the motion idea (a pipeline playing left to right), not from what one card needs. No step of the process asked for the card width.
+    - Root cause (review): the author verified what the tools measure (audit, layout shift, overflow, edges) and judged the look from downscaled full-page captures. The defect was visible in a crop and was noted, then waved through as "close enough", while only the obvious bug in the same crop (a squeezed image) was fixed. The audit could not catch it: it had no composition checks.
+    - Rules: card rows obey the width floors and the 5-item rule in `layout-and-components.md` §7; the plan states card widths with numbers; every section passes the **section critique** below; and a reviewer who did not build the page looks at the section frames.
+    - Check: audit `DEMO_TOO_SMALL`, `RAGGED_CARD_ROW`, `CARD_DEAD_GAP` (FAIL) and `NARROW_MEASURE` (WARN, fix or accept with a reason); the section critique table is in the report.
+
+## Section critique (required before reporting, owner review 04)
+
+The audit proves behaviour, not composition. Composition is checked here, section by section, by looking.
+
+1. Run the audit; it writes every section alone to `<out>/sections/` at native resolution: `-rest` (reduced motion, the settled frame) for each width and theme, and `-mid` (1.3s after the section is centred, mid-story) for the first theme.
+2. Open **each file at full size, one section at a time.** Never judge a section from a full-page capture or a contact sheet scaled down: at half size a 200px card with four-word lines looks fine.
+3. For every section answer each question with yes or no, writing down the evidence for any "no":
+   - **Measure:** does every paragraph read in comfortable lines (about 28 to 45 characters)? Do side-by-side titles fit on one line?
+   - **Shared lines:** in each row, do titles, text and demos or media start at the same height?
+   - **Holes:** is there empty space inside a card, or beside a column, that is not intentional breathing room?
+   - **Legibility:** at its real size, can you tell in two seconds what each demo shows? Is all text inside it 12px or larger?
+   - **Still frames:** do the `-rest` frame and the `-mid` frame both look finished and consistent (no half-typed text, empty canvases, mismatched badge or button states)?
+   - **Clutter:** any card inside a card that is not a stage, any element marked twice (number plus icon), any decoration that does not carry information?
+   - **Phone rhythm:** at 375, is the section a long run of look-alike cards?
+   - **Benchmark:** put it next to the home bento (`layout-and-components.md` §6). Is it as legible and as calm? If not, name the gap.
+4. **Verdicts are binary: ship or fix.** "Close enough", "roughly fine", "acceptable" and "minor" are not verdicts. Anything you noticed is either fixed now or listed to the owner as a known issue with its screenshot; it is never silently accepted.
+5. **Fresh eyes.** The builder sees the intended design, not the rendered one. After your own pass, give a reviewer that did not build the page (a separate agent, or the owner) only the section frames and the questions above, and ask for the three weakest things per section. Fix or report everything it finds; do not argue it away.
+6. Put the table (section × question, ship or fix, what changed) in the report.
+
 ## Pre-delivery checklist (state the result of each line in the report)
 
 - [ ] Hero demo cycles through at least 4 tools with real results; paused off-screen; static frame names several tools.
@@ -134,3 +161,6 @@ Format: **what was shipped → why it was rejected → the rule → how to check
 - [ ] Every showcase / scene set plays itself (`SHOWCASE_WAITS_FOR_CLICK` clean).
 - [ ] Every section's content edges equal the container edges at 375, 768, 1024, 1440 (the full-bleed marquee excepted).
 - [ ] Explainer sections reach the bento benchmark (playing films, not twitches).
+- [ ] Card rows: cards at least 280px and demo stages at least 220px wide, at most 4 text-and-demo cards per row, no five-equal-column rows (`DEMO_TOO_SMALL` clean).
+- [ ] Rows share lines and have no holes (`RAGGED_CARD_ROW`, `CARD_DEAD_GAP` clean); paragraphs are not squeezed (`NARROW_MEASURE` clean or each one accepted with a reason).
+- [ ] Section critique done from the native-size section frames (rest and mid), every verdict ship or fix, a fresh-eyes reviewer's findings handled, table in the report.

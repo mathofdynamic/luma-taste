@@ -18,7 +18,7 @@ The old pattern (descriptions ending in "…" or cut at the card edge) is a defe
 - **Never** use `text-overflow: ellipsis`, `-webkit-line-clamp`, or a fixed card `height` on descriptive copy.
 - Let descriptions wrap to as many lines as needed (a services card usually needs 3 to 4). Cards in the same row grow together.
 - Use `min-height`, not `height`. Use `text-wrap: pretty` for body and `balance` for titles.
-- Keep line length under about 38 to 45 characters in narrow cards by widening the card or reducing columns, not by cutting text.
+- Line length has a floor as well as a ceiling: descriptive copy reads at about **28 to 45 characters per line**. Under 20 is cramped (audit `NARROW_MEASURE`); fix it by widening the card or reducing columns, never by cutting text.
 - If copy is genuinely too long for the design, shorten the copy only with the owner's approval; report it.
 - The audit flags clipped text, ellipsis and line-clamp as FAIL.
 
@@ -68,7 +68,7 @@ The owner rejected short twitches (300ms) and "replay" buttons. Every explainer 
 - **Legible:** 1.2 to 3s per story, with clear beats (input, transformation, result). A visitor who glances for two seconds understands what the feature does.
 - **Automatic:** the story plays when the card enters the view, then repeats gently while the card stays in view (rest 1.5 to 3s between plays), and stops off-screen and when the tab is hidden.
 - **Responsive:** hover and `:focus-visible` replay it from the start immediately.
-- **Settled frame = final frame:** with no JS or reduced motion, the card shows the completed result.
+- **Settled frame = final frame:** with no JS or reduced motion, the card shows the completed result. Between plays and before a card's turn in a sequence, it also rests on the finished frame: never an empty canvas, half-typed text or a dimmed control. Play-only styling (an inverted "active" badge, a pressed button) exists only while playing, so a still of the section never shows two styles of the same element (review 04).
 - **Cheap:** transform, opacity, clip-path and small-SVG strokes only, driven by CSS keyframes keyed off `data-story-playing="true"`.
 - No replay buttons.
 
@@ -94,3 +94,16 @@ Plain text-only explainers get one playful touch: an underline that draws under 
 - **Motion benchmark (review 02):** the owner singled out the bento explainers ("تجربه نهایت قدرت" on the home page, `components/landing-v2/Bento.tsx` + `bento.module.css`) as the level of micro-animation every page should reach: each card a short readable film that plays in view, repeats, replays on hover, and rests on its finished frame. When building a new page, start its feature/explainer sections from that implementation.
 - **Final CTA:** one headline with the gradient word, supporting line, primary and secondary pills, one static glow; floating decoration only on desktop and static or gated.
 - **Footer:** accordion link groups on mobile (all links in server HTML), fixed-size lazy trust badges, 44px touch targets.
+
+## 7. Card rows and demo stages (owner review 04)
+
+A row of cards that each hold text and a small demo is the easiest section to get wrong: it passes every motion check and still looks cramped. Decide the row from the card's content, not from the number of items.
+
+- **Width floor.** A card with a title, a paragraph and a demo needs **at least 280px** on desktop; its demo stage needs **at least 220px** (audit `DEMO_TOO_SMALL`). With the 1200px container that means **at most 4 such cards per row**, and 3 is usually better.
+- **Five or more items are never five equal columns.** Use 2 + 3 (or 3 + 2) rows, a step list beside one large shared stage that changes with the active step, or a horizontal snap row. A sequence (steps 1 to 5) reads best as list + shared stage: one demo, big enough to read, telling the whole story.
+- **Shared lines across a row.** Titles, paragraphs and demos start at the same height in every card of a row (audit `RAGGED_CARD_ROW`: more than 16px apart fails, so one extra title line is enough). Titles fit on one line at every width where cards sit side by side (shorten the title or give the card more width); use `grid-template-rows: subgrid` on the cards when the content length genuinely varies.
+- **No holes inside a card.** More than about 56px of empty space between two blocks in a card is a hole (audit `CARD_DEAD_GAP`), typically a demo pushed to the bottom beside a short paragraph. Give demos one shared height per row and keep text lengths similar.
+- **One numbering device.** A card shows either a step number or an icon plate as its marker, not both in the same header, unless the icon carries information the number does not.
+- **A demo stage is a stage, not a sub-card.** An inner bordered box is fine when it is the card's stage (the home bento does this) and spans most of the card's width; several small bordered boxes inside a card read as clutter.
+- **Phones.** Look at how long the section becomes at 375px. Five full-width cards with the same layout stacked one after another is a long, repetitive scroll (about two screens or more); consider a compact list, a snap row or the shared-stage layout instead.
+- **Plan it with numbers.** For every card row, the plan states the cards per row and the resulting card width at 375, 1024 and 1440 (container width minus gutters, divided by columns) and checks them against these floors before any code is written.

@@ -5,10 +5,12 @@
     "identicalSeams": 8
   },
   "broken": {
-    "fails": 84,
+    "fails": 94,
     "expectedChecks": [
       "BACKDROP_PREFIX_ONLY",
+      "CARD_DEAD_GAP",
       "DECORATIVE_ACCENT_BAR",
+      "DEMO_TOO_SMALL",
       "ENTRANCE_TOO_FAST",
       "FIRST_SCREEN_STATIC",
       "IDLE_LAYOUT_SHIFT",
@@ -18,6 +20,7 @@
       "OVERFLOW_X",
       "PERSIAN_LETTER_SPACING",
       "PREMATURE_REVEAL",
+      "RAGGED_CARD_ROW",
       "REVEAL_NEVER_FIRES",
       "SCROLL_LAYOUT_SHIFT",
       "SHOWCASE_WAITS_FOR_CLICK",
@@ -27,7 +30,9 @@
     ],
     "detectedChecks": [
       "BACKDROP_PREFIX_ONLY",
+      "CARD_DEAD_GAP",
       "DECORATIVE_ACCENT_BAR",
+      "DEMO_TOO_SMALL",
       "ENTRANCE_TOO_FAST",
       "FIRST_SCREEN_STATIC",
       "IDLE_LAYOUT_SHIFT",
@@ -37,6 +42,7 @@
       "OVERFLOW_X",
       "PERSIAN_LETTER_SPACING",
       "PREMATURE_REVEAL",
+      "RAGGED_CARD_ROW",
       "REDUCED_MOTION_HIDDEN",
       "REDUCED_MOTION_LOOP",
       "REVEAL_NEVER_FIRES",
@@ -45,6 +51,14 @@
       "TEXT_CLIPPED",
       "TEXT_TRUNCATED",
       "THEME_NOT_APPLIED"
+    ],
+    "warns": 8,
+    "expectedWarnings": [
+      "NARROW_MEASURE"
+    ],
+    "detectedWarnings": [
+      "LOOP_PAINT_PROPERTY",
+      "NARROW_MEASURE"
     ]
   },
   "browser": "installed Google Chrome, headless",
@@ -58,5 +72,5 @@
   ],
   "themeAttr": "class",
   "enterMs": 600,
-  "verifiedOn": "2026-10-27"
+  "verifiedOn": "2026-10-29"
 }

@@ -13,7 +13,8 @@
  * which means either everything animated at load or the later reveal will blink), layout shift during idle and
  * during a fast scroll (lazy sections, loading media), multi-line text revealed by one wipe, decorative accent
  * bars, and showcases that wait for a click instead of playing themselves (owner review 02).
- * Writes <out>/motion-audit.json and <out>/motion-audit.md, plus seam frames with --seam.
+ * Writes <out>/motion-audit.json and <out>/motion-audit.md, per-section rest/mid frames in <out>/sections/ for the
+ * section critique, plus seam frames with --seam.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -208,6 +209,51 @@ function accentProbe() {
   return out;
 }
 
+/* Composition (owner review 04): the audit cannot judge taste, but it can measure the three things that made a
+   five-column step row unreadable: demo stages too small to read, card rows whose titles / text / demos start on
+   different lines, holes inside cards, and paragraphs squeezed to a few words per line. */
+function layoutProbe() {
+  const out = { measure: [], ragged: [], gaps: [], demos: [] };
+  const name = (el) => `${el.tagName.toLowerCase()}${el.classList[0] ? '.' + el.classList[0] : ''}`;
+  const shown = (el) => { const cs = getComputedStyle(el), r = el.getBoundingClientRect(); return cs.display !== 'none' && cs.visibility !== 'hidden' && r.width > 0 && r.height > 0; };
+  const inFlow = (el) => !/absolute|fixed/.test(getComputedStyle(el).position) && shown(el);
+  const lines = (el) => { const r = document.createRange(); r.selectNodeContents(el); let n = 0, bottom = -Infinity; [...r.getClientRects()].filter((x) => x.width > 1 && x.height > 1).sort((a, b) => a.top - b.top).forEach((x) => { if (x.top >= bottom - 2) { n++; bottom = x.bottom; } else bottom = Math.max(bottom, x.bottom); }); return n; };
+  const chrome = (el) => el.closest('nav,header,footer,dialog,[role=dialog],[aria-hidden=true]');
+  const boxed = (el) => { const cs = getComputedStyle(el); return parseFloat(cs.borderTopLeftRadius) >= 8 && ['Top', 'Right', 'Bottom', 'Left'].some((s) => parseFloat(cs[`border${s}Width`]) >= 1 && !/rgba\([^)]*,\s*0\)|transparent/.test(cs[`border${s}Color`])); };
+  document.querySelectorAll('main p, main li, main dd').forEach((el) => {
+    if (chrome(el) || !shown(el) || el.querySelector('p,li,div')) return;
+    const text = el.textContent.replace(/\s+/g, ' ').trim(), n = lines(el);
+    if (n >= 3 && text.length >= 40) out.measure.push({ el: name(el), sample: text.slice(0, 24), perLine: Math.round(text.length / n), lines: n, width: Math.round(el.getBoundingClientRect().width) });
+  });
+  const blocks = (card) => { let n = card; while (n.children.length === 1 && inFlow(n.children[0])) n = n.children[0]; return [...n.children].filter(inFlow); };
+  document.querySelectorAll('main *').forEach((grid) => {
+    if (!/grid|flex/.test(getComputedStyle(grid).display) || chrome(grid)) return;
+    const kids = [...grid.children].filter(inFlow); if (kids.length < 3) return;
+    const rows = new Map(); kids.forEach((k) => { const t = Math.round(k.getBoundingClientRect().top / 4); rows.set(t, [...(rows.get(t) || []), k]); });
+    rows.forEach((row) => {
+      if (row.length < 3) return;
+      const ws = row.map((k) => k.getBoundingClientRect().width); if (Math.max(...ws) > Math.min(...ws) * 1.15 || Math.min(...ws) < 120) return;
+      if (row.every((k) => k.getBoundingClientRect().height < 120)) return; // chips and tags
+      const bs = row.map(blocks), count = bs[0].length; if (count < 2 || bs.some((b) => b.length !== count)) return;
+      if (bs.every((b) => new Set(b.map((x) => x.className.toString())).size === 1)) return; // masonry columns of repeated tiles are uneven by design
+      for (let i = 0; i < count; i++) {
+        const tops = row.map((k, j) => bs[j][i].getBoundingClientRect().top - k.getBoundingClientRect().top), spread = Math.max(...tops) - Math.min(...tops);
+        if (spread > 16) { out.ragged.push({ grid: name(grid), cards: row.length, width: Math.round(ws[0]), block: i + 1, of: count, what: name(bs[0][i]), spread: Math.round(spread) }); break; }
+      }
+      row.forEach((k, j) => { const b = bs[j]; for (let i = 1; i < b.length; i++) { const gap = b[i].getBoundingClientRect().top - b[i - 1].getBoundingClientRect().bottom; if (gap > 56) { out.gaps.push({ card: name(k), between: `${name(b[i - 1])} and ${name(b[i])}`, gap: Math.round(gap) }); return; } } });
+    });
+  });
+  document.querySelectorAll('main *').forEach((el) => { // a demo stage: a bordered box spanning most of a bordered card (demos are often aria-hidden: still measured)
+    if (el.closest('nav,header,footer,dialog,[role=dialog]') || !shown(el) || !boxed(el) || el.matches('input,textarea,select,button,a,summary,[role=textbox],[data-field]')) return;
+    for (let p = el.parentElement, d = 0; p && d < 4 && p.tagName !== 'MAIN'; p = p.parentElement, d++) if (boxed(p)) {
+      const r = el.getBoundingClientRect(), q = p.getBoundingClientRect();
+      if (r.width >= q.width * 0.55 && r.height >= 80 && r.width < 220) out.demos.push({ demo: name(el), card: name(p), size: `${Math.round(r.width)}x${Math.round(r.height)}` });
+      break;
+    }
+  });
+  return out;
+}
+
 // Third-party beacons (analytics) can hang for minutes on some networks, so network idle may never come: fall back
 // to the load event plus a short settle instead of aborting the whole audit.
 async function gotoSettled(page) {
@@ -297,6 +343,14 @@ for (const width of widths) {
         else if (Math.abs(e.ms - enterMs) > 100) add('WARN', 'ENTRANCE_DURATION_DRIFT', where, `${e.el} reveals in ${e.ms}ms (Luma: ${enterMs}ms)`);
       });
       if (r.glass.length && width < 600) r.glass.forEach((g) => g.area > 375 * 800 * 0.6 && add('WARN', 'LARGE_BACKDROP_BLUR', where, `${g.el} ${g.area}px² (keep blur on small fixed layers)`));
+    }
+    if (theme === themes[0]) { // composition, measured once per width with everything mounted and revealed
+      const c = await page.evaluate(layoutProbe);
+      const once = (arr, key) => [...new Map(arr.map((x) => [key(x), x])).values()];
+      once(c.demos, (d) => d.demo + d.size).forEach((d) => add('FAIL', 'DEMO_TOO_SMALL', where, `${d.demo} (${d.size}) inside ${d.card}: a demo stage under 220px wide cannot be read at a glance; use fewer, wider cards (layout-and-components.md section 7)`));
+      once(c.ragged, (r) => r.grid).forEach((r) => add('FAIL', 'RAGGED_CARD_ROW', where, `${r.grid}: ${r.cards} cards ${r.width}px wide, block ${r.block}/${r.of} (${r.what}) starts up to ${r.spread}px apart across the row; titles, text and demos must share lines (fewer columns, one-line titles, subgrid rows)`));
+      once(c.gaps, (g) => g.card + g.between).forEach((g) => add('FAIL', 'CARD_DEAD_GAP', where, `${g.card}: ${g.gap}px of empty space between ${g.between}; a hole inside a card, usually a demo pushed down beside shorter text`));
+      once(c.measure.filter((m) => m.perLine < 20), (m) => m.el + m.sample).slice(0, 6).forEach((m) => add('WARN', 'NARROW_MEASURE', where, `${m.el} "${m.sample}" runs ${m.perLine} characters per line over ${m.lines} lines (${m.width}px); widen the column (about 28 to 45 per line reads well)`));
     }
     { // at the very bottom, nothing on screen may still be staged hidden (a shrunken root margin cannot reach a short footer)
       await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight)); await page.waitForTimeout(1500);
@@ -426,6 +480,34 @@ if (themes.length > 1) { // prove the theme switch really changed the page (othe
   if (hidden) add('FAIL', 'NO_JS_HIDDEN_CONTENT', 'js-disabled', `${hidden} [data-reveal] elements are invisible without JavaScript`);
   await ctx.close();
 }
+// Section frames for the section critique (owner review 04): every section alone, at native resolution, at rest
+// (reduced motion = the settled frame) and mid-motion (normal, 1.3s after it is centred). Judge these one by one; a
+// downscaled full-page capture hides cramped cards, ragged rows and half-played demos.
+const sectionFrames = [];
+{
+  const dir = path.join(out, 'sections'); fs.mkdirSync(dir, { recursive: true });
+  for (const width of widths) for (const theme of themes) for (const mode of theme === themes[0] ? ['rest', 'mid'] : ['rest']) {
+    const ctx = await browser.newContext({ viewport: { width, height: width < 600 ? 800 : 900 }, reducedMotion: mode === 'rest' ? 'reduce' : 'no-preference' });
+    const page = await ctx.newPage();
+    await gotoSettled(page);
+    await page.evaluate(([a, t]) => { const el = document.documentElement; if (a === 'class') { el.classList.remove('light', 'dark'); el.classList.add(t); } else el.setAttribute(a, t); }, [themeAttr, theme]);
+    for (let y = 0, h = await page.evaluate(() => document.documentElement.scrollHeight); y < h; y += 600) { await page.evaluate((yy) => scrollTo(0, yy), y); await page.waitForTimeout(150); }
+    const count = await page.evaluate(() => {
+      document.querySelectorAll('body *').forEach((el) => { const p = getComputedStyle(el).position; if ((p === 'fixed' || p === 'sticky') && !el.closest('main')) el.style.visibility = 'hidden'; }); // header, chat bubbles, back-to-top
+      const list = [...document.querySelectorAll('main > *, body > footer, footer#landing-footer')].filter((el, i, all) => el.getBoundingClientRect().height > 120 && all.indexOf(el) === i);
+      list.forEach((el, i) => el.setAttribute('data-lm-section', String(i))); return list.length;
+    });
+    for (let i = 0; i < count; i++) {
+      const loc = page.locator(`[data-lm-section="${i}"]`);
+      await loc.evaluate((el) => el.scrollIntoView({ block: el.getBoundingClientRect().height > innerHeight ? 'start' : 'center' }));
+      await page.waitForTimeout(mode === 'rest' ? 300 : 1300);
+      const file = `${String(i + 1).padStart(2, '0')}-${width}-${theme}-${mode}.png`;
+      await loc.screenshot({ path: path.join(dir, file) }).catch(() => {});
+      sectionFrames.push(file);
+    }
+    await ctx.close();
+  }
+}
 await browser.close();
 
 const fails = findings.filter((f) => f.level === 'FAIL'), warns = findings.filter((f) => f.level === 'WARN');
@@ -434,6 +516,7 @@ const f2 = uniq(findings);
 fs.writeFileSync(path.join(out, 'motion-audit.json'), JSON.stringify({ url, widths, themes, margin, enterMs, themeEvidence, findings: f2, seams }, null, 2));
 const md = [`# Motion audit`, `URL: ${url}`, `FAIL: ${uniq(fails).length}  WARN: ${uniq(warns).length}`, '',
   ...(f2.length ? ['| Level | Check | Where | Detail |', '|---|---|---|---|', ...f2.map((f) => `| ${f.level} | ${f.check} | ${f.where} | ${f.detail.replace(/\|/g, '/')} |`)] : ['No findings.']),
+  '', sectionFrames.length ? `## Section frames\n${sectionFrames.length} files in sections/ (NN-width-theme-rest|mid.png). Critique every section from these, one at a time (owner-review-log.md, "Section critique").\n` : '',
   '', seams.length ? '## Loop seams\n' + seams.map((s) => `- ${s.where} ${s.id} (${s.duration}ms): ${s.identical ? 'identical frames' : 'frames differ, inspect images'}`).join('\n') : ''].join('\n');
 fs.writeFileSync(path.join(out, 'motion-audit.md'), md);
 console.log(md);

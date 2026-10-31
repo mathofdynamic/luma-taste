@@ -139,6 +139,7 @@ function auditPage(margin = 0) {
     if (!own) return;
     const r = el.getBoundingClientRect();
     if (r.width === 0 || r.height === 0) return;
+    if (r.width <= 2 && r.height <= 2 && cs.overflow !== 'visible') return; // visually hidden (sr-only) text exists for assistive tech
     // Measure the text's own line boxes: decorative absolute layers (a liquid-fill ::before parked
     // below a button) inflate scrollHeight without clipping any glyph.
     let clipped = false;

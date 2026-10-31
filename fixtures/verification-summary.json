@@ -5,7 +5,7 @@
     "identicalSeams": 8
   },
   "broken": {
-    "fails": 94,
+    "fails": 95,
     "expectedChecks": [
       "BACKDROP_PREFIX_ONLY",
       "CARD_DEAD_GAP",
@@ -72,5 +72,5 @@
   ],
   "themeAttr": "class",
   "enterMs": 600,
-  "verifiedOn": "2026-10-29"
+  "verifiedOn": "2026-10-31"
 }

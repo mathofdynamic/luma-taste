@@ -107,3 +107,13 @@ A row of cards that each hold text and a small demo is the easiest section to ge
 - **A demo stage is a stage, not a sub-card.** An inner bordered box is fine when it is the card's stage (the home bento does this) and spans most of the card's width; several small bordered boxes inside a card read as clutter.
 - **Phones.** Look at how long the section becomes at 375px. Five full-width cards with the same layout stacked one after another is a long, repetitive scroll (about two screens or more); consider a compact list, a snap row or the shared-stage layout instead.
 - **Plan it with numbers.** For every card row, the plan states the cards per row and the resulting card width at 375, 1024 and 1440 (container width minus gutters, divided by columns) and checks them against these floors before any code is written.
+
+## 8. Two-column rows: no dead space beside a column (owner review 05)
+
+A list, a set of tabs or a block of copy beside one taller element (a stage, a browser frame, a demo) is the most common service-page layout, and it goes wrong in two quiet ways that every other check passes:
+
+- **Empty band above and below.** A short column centered beside a tall one (`align-items:center`) leaves an empty band above and below the short side. When the short column is a list of steps, tabs or cases, **stretch it to the row**: `align-items:stretch` on the row and `grid-auto-rows:1fr` on the list, so the items share the height evenly (inside an item, put the icon at the top and the words at the bottom, or center the words). If the items would become hollow boxes, shorten the tall side instead (a lower stage, fewer chat lines) until the two sides are within about 120px of each other.
+- **Empty band beside it.** A list that is `display:flex; justify-content:center` on phones and becomes `display:grid` on desktop keeps the centering: its grid track shrinks to its content and floats in the middle of its span with gaps on both sides. A desktop grid list always sets `grid-template-columns:minmax(0,1fr)` (and resets `justify-content`), so it fills its span edge to edge.
+- **Every item in such a list looks like an item.** Inactive tabs or cases keep a border (a quieter one), so the list reads as a set of equal choices rather than one card and floating text.
+- **Check.** Audit `DEAD_SPACE_BESIDE`: in a row of two side-by-side columns (each at least 240px wide, the row at least 240px tall), a column whose content leaves more than 120px of the row's height empty, or more than 48px of its own width, fails when its items are cards or buttons and warns when it is plain copy. Plain copy beside a demo may stay centered; a warning there still needs a look at the section frame.
+

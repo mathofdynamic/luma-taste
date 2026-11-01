@@ -214,7 +214,7 @@ function accentProbe() {
    five-column step row unreadable: demo stages too small to read, card rows whose titles / text / demos start on
    different lines, holes inside cards, and paragraphs squeezed to a few words per line. */
 function layoutProbe() {
-  const out = { measure: [], ragged: [], gaps: [], demos: [] };
+  const out = { measure: [], ragged: [], gaps: [], demos: [], dead: [] };
   const name = (el) => `${el.tagName.toLowerCase()}${el.classList[0] ? '.' + el.classList[0] : ''}`;
   const shown = (el) => { const cs = getComputedStyle(el), r = el.getBoundingClientRect(); return cs.display !== 'none' && cs.visibility !== 'hidden' && r.width > 0 && r.height > 0; };
   const inFlow = (el) => !/absolute|fixed/.test(getComputedStyle(el).position) && shown(el);
@@ -251,6 +251,26 @@ function layoutProbe() {
       if (r.width >= q.width * 0.55 && r.height >= 80 && r.width < 220) out.demos.push({ demo: name(el), card: name(p), size: `${Math.round(r.width)}x${Math.round(r.height)}` });
       break;
     }
+  });
+  // Dead space beside a sibling (owner review 05): in a two-column row, a column whose content is centered or shrunk
+  // inside its area leaves an empty band above / below it (a short list beside a tall stage) or beside it (a grid
+  // list that kept justify-content:center and floats in the middle of its span).
+  document.querySelectorAll('main *').forEach((grid) => {
+    if (!/grid|flex/.test(getComputedStyle(grid).display) || chrome(grid)) return;
+    const kids = [...grid.children].filter(inFlow); if (kids.length !== 2) return;
+    const [a, b] = kids.map((k) => k.getBoundingClientRect());
+    if (!(a.right <= b.left + 1 || b.right <= a.left + 1) || Math.min(a.width, b.width) < 240) return; // side by side only
+    const rowTop = Math.min(a.top, b.top), rowBottom = Math.max(a.bottom, b.bottom), rowHeight = rowBottom - rowTop; if (rowHeight < 240) return;
+    kids.forEach((k) => {
+      const items = blocks(k); if (!items.length) return;
+      const rs = items.map((x) => x.getBoundingClientRect()), kr = k.getBoundingClientRect();
+      const top = Math.min(...rs.map((r) => r.top)), bottom = Math.max(...rs.map((r) => r.bottom)), left = Math.min(...rs.map((r) => r.left)), right = Math.max(...rs.map((r) => r.right));
+      // a list of choices (steps, tabs, cases): most items are bordered boxes or hold a button; a copy column with one badge is not
+      const interactive = items.length >= 2 && items.filter((x) => boxed(x) || x.matches('button') || x.querySelector(':scope > button, :scope > a')).length >= items.length * 0.6;
+      const emptyV = rowHeight - (bottom - top), emptyH = kr.width - (right - left);
+      if (emptyV > 120 && bottom - top < rowHeight * 0.8) out.dead.push({ column: name(k), grid: name(grid), axis: 'block', empty: Math.round(emptyV), of: Math.round(rowHeight), interactive });
+      else if (emptyH > 48 && right - left < kr.width * 0.85) out.dead.push({ column: name(k), grid: name(grid), axis: 'inline', empty: Math.round(emptyH), of: Math.round(kr.width), interactive });
+    });
   });
   return out;
 }
@@ -348,6 +368,7 @@ for (const width of widths) {
     if (theme === themes[0]) { // composition, measured once per width with everything mounted and revealed
       const c = await page.evaluate(layoutProbe);
       const once = (arr, key) => [...new Map(arr.map((x) => [key(x), x])).values()];
+      once(c.dead, (d) => d.column + d.axis).forEach((d) => add(d.interactive ? 'FAIL' : 'WARN', 'DEAD_SPACE_BESIDE', where, `${d.column} in ${d.grid}: ${d.empty}px of its ${d.of}px ${d.axis === 'block' ? 'height' : 'width'} is empty beside the other column; ${d.axis === 'block' ? 'stretch the column to the row (align-items:stretch, rows 1fr) or shorten the taller side' : 'let the column fill its span (grid-template-columns:minmax(0,1fr), no justify-content:center)'} (layout-and-components.md section 8)`));
       once(c.demos, (d) => d.demo + d.size).forEach((d) => add('FAIL', 'DEMO_TOO_SMALL', where, `${d.demo} (${d.size}) inside ${d.card}: a demo stage under 220px wide cannot be read at a glance; use fewer, wider cards (layout-and-components.md section 7)`));
       once(c.ragged, (r) => r.grid).forEach((r) => add('FAIL', 'RAGGED_CARD_ROW', where, `${r.grid}: ${r.cards} cards ${r.width}px wide, block ${r.block}/${r.of} (${r.what}) starts up to ${r.spread}px apart across the row; titles, text and demos must share lines (fewer columns, one-line titles, subgrid rows)`));
       once(c.gaps, (g) => g.card + g.between).forEach((g) => add('FAIL', 'CARD_DEAD_GAP', where, `${g.card}: ${g.gap}px of empty space between ${g.between}; a hole inside a card, usually a demo pushed down beside shorter text`));

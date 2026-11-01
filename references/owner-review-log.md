@@ -119,6 +119,14 @@ Format: **what was shipped → why it was rejected → the rule → how to check
     - Rules: card rows obey the width floors and the 5-item rule in `layout-and-components.md` §7; the plan states card widths with numbers; every section passes the **section critique** below; and a reviewer who did not build the page looks at the section frames.
     - Check: audit `DEMO_TOO_SMALL`, `RAGGED_CARD_ROW`, `CARD_DEAD_GAP` (FAIL) and `NARROW_MEASURE` (WARN, fix or accept with a reason); the section critique table is in the report.
 
+## Review 05 — Smart assistant page (2026-11-01)
+
+33. **Dead space beside a column, twice on one page.** "دستیار خود را همه جا ببرید": two short tabs centered beside a 530px browser frame left about 180px empty above and below them, and the inactive tab had no border, so it read as loose text. "خلق دستیار در ۴ گام ساده": the step list floated in the middle of its five columns with about 150px of empty width around it.
+    - Root cause (CSS): the use-case row was `align-items:center` with no row sizing for the list; the shared step list was `display:flex; justify-content:center` for phones and only switched to `display:grid` at 1024px, so the centering survived and shrank its track. The same step component shipped on three earlier pages with the same gap, and the background-removal cases had the same centered list.
+    - Root cause (review): the section critique judged each block on its own (readable, playing, finished); nobody asked whether the two columns fill the row together, and the pre-delivery line "no dead space in two-column sections" had no measurement behind it.
+    - Rules: `layout-and-components.md` §8: lists beside a stage stretch to the row with `1fr` rows, desktop grid lists fill their span, inactive items keep a border; the section critique adds the question "does every column fill the row?".
+    - Check: audit `DEAD_SPACE_BESIDE` (FAIL for lists of cards or buttons, WARN for plain copy).
+
 ## Section critique (required before reporting, owner review 04)
 
 The audit proves behaviour, not composition. Composition is checked here, section by section, by looking.
@@ -129,6 +137,7 @@ The audit proves behaviour, not composition. Composition is checked here, sectio
    - **Measure:** does every paragraph read in comfortable lines (about 28 to 45 characters)? Do side-by-side titles fit on one line?
    - **Shared lines:** in each row, do titles, text and demos or media start at the same height?
    - **Holes:** is there empty space inside a card, or beside a column, that is not intentional breathing room?
+   - **Columns fill the row (owner review 05):** in a two-column row, does each column reach the row's top and bottom and fill its own span? A short list centered beside a tall stage, or a list floating in the middle of its columns, is a fix.
    - **Legibility:** at its real size, can you tell in two seconds what each demo shows? Is all text inside it 12px or larger?
    - **Still frames:** do the `-rest` frame and the `-mid` frame both look finished and consistent (no half-typed text, empty canvases, mismatched badge or button states)?
    - **Clutter:** any card inside a card that is not a stage, any element marked twice (number plus icon), any decoration that does not carry information?
@@ -149,7 +158,7 @@ The audit proves behaviour, not composition. Composition is checked here, sectio
 - [ ] Primary buttons use the liquid fill hover; press scale on all buttons.
 - [ ] Entrances: about 600ms, per element on scroll, no blink, nothing below the fold revealed at load, and nothing still hidden at the very bottom (footer included).
 - [ ] Everything visible in the first screen animates in, at 1440×900 and 1920×1080 too (`FIRST_SCREEN_STATIC` clean).
-- [ ] No dead space in two-column sections at 1024 and 1440.
+- [ ] No dead space in two-column sections at 1024 and 1440 (`DEAD_SPACE_BESIDE` clean; lists beside a stage stretch to it, desktop grid lists fill their span).
 - [ ] Comparisons follow the pointer; no slider under media; keyboard arrows work.
 - [ ] Media tiles: skeleton while loading, smooth reveal on decode, fallback on error.
 - [ ] Explainer stories are legible, play on view, repeat while in view, no replay buttons.

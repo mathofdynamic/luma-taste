@@ -48,6 +48,7 @@ These come from the owner's reviews of the site. They override generic design ad
 18. **The bento explainers on the home page are the benchmark** for micro-animation on every new page (owner review 02).
 19. **Persian first.** RTL, logical properties, no letter-spacing on Persian text, readable line-height 1.8, real Persian copy.
 20. **Card rows are sized by their content, not by their item count (owner review 04).** Text-and-demo cards are at least 280px wide with demo stages of at least 220px, at most four per row; five or more items become 2 + 3 rows or a list beside one shared stage. Titles, text and demos share lines across a row, nothing inside a card is a hole, and a still frame of any story section looks finished. (`layout-and-components.md` §7.)
+21. **Two columns fill the row together (owner review 05).** A list of steps, tabs or cases beside a taller stage stretches to the stage (`align-items:stretch`, `grid-auto-rows:1fr`) or the stage gets shorter; a desktop grid list fills its span (`grid-template-columns:minmax(0,1fr)`, never a leftover `justify-content:center`); inactive items keep a border. No empty band above, below or beside a column. (`layout-and-components.md` §8.)
 
 ## The motion matrix (required deliverable)
 
@@ -98,7 +99,7 @@ Assets: `assets/luma-tokens.css`, `assets/luma-motion.css`, `assets/luma-motion.
 - A loop that is not gated to the viewport, not seamless, or not reduced-motion safe.
 - `transition: all`; animating `margin`, `top`, `left`; `scale(0)` entrances; `ease-in` on UI. (`width`/`height` only for the sanctioned morphing menu panel, see `signature-patterns.md`.)
 - Text that is truncated, clipped, under 12px, or letter-spaced in Persian; paragraphs squeezed under about 20 characters per line.
-- A row of five or more equal text-and-demo cards; demo stages under 220px; rows whose titles, text or demos start at different heights; holes inside cards (`DEMO_TOO_SMALL`, `RAGGED_CARD_ROW`, `CARD_DEAD_GAP`).
+- A row of five or more equal text-and-demo cards; demo stages under 220px; rows whose titles, text or demos start at different heights; holes inside cards (`DEMO_TOO_SMALL`, `RAGGED_CARD_ROW`, `CARD_DEAD_GAP`); a column floating beside a taller one with empty bands around it (`DEAD_SPACE_BESIDE`).
 - A section judged only from a downscaled full-page capture, or a section critique verdict other than ship or fix.
 - Decorative accent lines in cards; a hover glow in a single color; a showcase that waits for clicks; a visible pause button on the marquee; multi-line text revealed by one wipe.
 - Layout shift without input, idle or while scrolling (`IDLE_LAYOUT_SHIFT`, `SCROLL_LAYOUT_SHIFT`).

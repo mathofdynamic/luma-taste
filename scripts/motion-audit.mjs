@@ -494,6 +494,41 @@ if (themes.length > 1) { // prove the theme switch really changed the page (othe
     if (new Set(bgs).size === 1) add('FAIL', 'THEME_NOT_APPLIED', `${w}px`, `body background identical for ${themes.join('/')} (${bgs[0]}); check --theme-attr (next-themes uses class)`);
   }
 }
+// Pinned scenes (owner review 07): a sticky scroll scene is judged while it is pinned, at every audited width and on a
+// tall monitor. The pinned screen must say what it shows (a heading on screen), be filled or centred (no big empty band
+// above or below the content) and clip nothing. A 620px stage pinned at the top of a 1880px screen showed a strip of
+// panes over an empty screen with its heading scrolled away; the 900px-tall audit viewports never saw it.
+{
+  const viewports = [...widths.map((w) => [w, w < 600 ? 800 : 900]), [1440, 1900], [1920, 1080]];
+  for (const [width, height] of viewports) {
+    const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1 });
+    const page = await ctx.newPage();
+    await gotoSettled(page);
+    const count = await page.evaluate(() => [...document.querySelectorAll('[data-scroll-scene]')].filter((el) => { const st = el.querySelector('[data-stage]') ?? el.firstElementChild; return st && getComputedStyle(st).position === 'sticky' && el.offsetHeight - st.offsetHeight > 40; }).length);
+    for (let i = 0; i < count; i++) for (const f of [0.15, 0.5, 0.9]) {
+      const r = await page.evaluate(async ([i, f]) => {
+        const el = [...document.querySelectorAll('[data-scroll-scene]')].filter((s) => { const st = s.querySelector('[data-stage]') ?? s.firstElementChild; return st && getComputedStyle(st).position === 'sticky' && s.offsetHeight - st.offsetHeight > 40; })[i];
+        const st = el.querySelector('[data-stage]') ?? el.firstElementChild;
+        const pin = parseFloat(getComputedStyle(st).top) || 0;
+        scrollTo(0, el.getBoundingClientRect().top + scrollY - pin + (el.offsetHeight - st.offsetHeight) * f);
+        await new Promise((res) => setTimeout(res, 700));
+        const s = st.getBoundingClientRect(); const avail = innerHeight - pin;
+        const shown = (e) => { const cs = getComputedStyle(e); return cs.visibility !== 'hidden' && +cs.opacity > 0; };
+        const marks = [...el.querySelectorAll('*')].filter((e) => ([...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim()) || e.matches('svg,img,video,canvas,[data-diagram] > *')) && shown(e))
+          .map((e) => e.getBoundingClientRect()).filter((b) => b.width > 0 && b.height > 0 && b.bottom > pin && b.top < innerHeight);
+        const top = Math.min(...marks.map((b) => b.top)), bottom = Math.max(...marks.map((b) => b.bottom));
+        const heading = [...el.querySelectorAll('h1,h2,h3')].some((h) => { const b = h.getBoundingClientRect(); return b.height > 0 && b.top >= pin - 1 && b.bottom <= innerHeight; });
+        const clipped = [...st.querySelectorAll('*')].filter((e) => { const b = e.getBoundingClientRect(); return b.height > 0 && shown(e) && b.bottom > Math.min(s.bottom, innerHeight) + 1; }).length;
+        return { heading, clipped, emptyTop: Math.round((Math.max(top, pin) - pin) / avail * 100), emptyBottom: Math.round((innerHeight - Math.min(bottom, innerHeight)) / avail * 100) };
+      }, [i, f]);
+      const where = `${width}x${height} scene ${i + 1} at ${Math.round(f * 100)}%`;
+      if (!r.heading) add('FAIL', 'PINNED_SCENE_NO_HEADING', where, 'no heading is on screen while the scene is pinned: pin the section heading with the stage so the pinned screen says what it shows (signature-patterns.md section 12)');
+      if (Math.max(r.emptyTop, r.emptyBottom) > 35) add('FAIL', 'PINNED_SCENE_EMPTY', where, `${Math.max(r.emptyTop, r.emptyBottom)}% of the screen under the site header is empty ${r.emptyBottom > r.emptyTop ? 'below' : 'above'} the pinned content (top ${r.emptyTop}%, bottom ${r.emptyBottom}%): the stage fills the screen (block-size: 100svh minus the header) and centres a capped frame (signature-patterns.md section 12)`);
+      if (r.clipped) add('FAIL', 'PINNED_SCENE_CLIPPED', where, `${r.clipped} element(s) of the pinned stage run past its bottom or the screen; compact the stage for this size`);
+    }
+    await ctx.close();
+  }
+}
 // Reduced motion: no running infinite loops, nothing hidden
 {
   const ctx = await browser.newContext({ viewport: { width: 375, height: 800 }, reducedMotion: 'reduce' });

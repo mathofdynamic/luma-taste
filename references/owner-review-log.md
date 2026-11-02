@@ -134,6 +134,13 @@ Format: **what was shipped → why it was rejected → the rule → how to check
     - Rules: SKILL.md rule 22. Before planning, write the **page-shape ledger** (`design-process.md` "Page shape"): the section shapes of the last three pages, then choose different ones for this page. Explain with small home-bento-style animations (the benchmark), keep one outstanding attention moment, and build at least one **scroll-driven scene** (`signature-patterns.md` §12). Stay inside the tokens, materials, motion timing and every earlier rule.
     - Check: audit `NO_SCROLL_SCENE` (FAIL with `--service`); the section critique asks "Different from its siblings?" with the ledger in the report.
 
+## Review 07 — The pinned scene left the screen empty (2026-11-02)
+
+35. **Text-to-speech page, scroll-driven scene on a tall monitor (1870×1880):** the stage was capped at 620px and stuck under the header; the section heading sat above the wrapper and scrolled away. While pinned the visitor saw three half-empty panes at the top and an empty screen below for the whole scroll distance. The owner: "this section sticks to top of the page view and we can't see shit … this is why visual proof is so important!"
+    - Root cause: the scene was only checked at 900px-tall audit viewports and in section frames captured outside the pin; nobody looked at the pinned screen on a tall monitor, and no rule said what a pinned screen must contain.
+    - Rules: `signature-patterns.md` §12 "The pinned screen is a whole screen": the heading pins with the stage; the stage fills the screen and centres a capped frame; progress is measured from the real pin point. Visual proof of the pinned screen (laptop, phone, tall monitor) goes in the report.
+    - Check: audit `PINNED_SCENE_NO_HEADING`, `PINNED_SCENE_EMPTY` (more than 35% of the screen under the header empty above or below the content), `PINNED_SCENE_CLIPPED`, at every width plus 1440×1900 and 1920×1080.
+
 ## Section critique (required before reporting, owner review 04)
 
 The audit proves behaviour, not composition. Composition is checked here, section by section, by looking.
@@ -150,6 +157,7 @@ The audit proves behaviour, not composition. Composition is checked here, sectio
    - **Clutter:** any card inside a card that is not a stage, any element marked twice (number plus icon), any decoration that does not carry information?
    - **Phone rhythm:** at 375, is the section a long run of look-alike cards?
    - **Different from its siblings (owner review 06):** does this section reuse the shape of a section on the previous three pages (same layout, same component, same rhythm)? If yes, is that a deliberate choice you can defend, or a habit? Habit is a fix.
+   - **Pinned screens (owner review 07):** for a scroll-driven scene, open the 50% pinned screenshot at a phone, a laptop and a tall monitor. Is the heading on screen, the content filling or centred, nothing clipped?
    - **Benchmark:** put it next to the home bento (`layout-and-components.md` §6). Is it as legible and as calm? If not, name the gap.
 4. **Verdicts are binary: ship or fix.** "Close enough", "roughly fine", "acceptable" and "minor" are not verdicts. Anything you noticed is either fixed now or listed to the owner as a known issue with its screenshot; it is never silently accepted.
 5. **Fresh eyes.** The builder sees the intended design, not the rendered one. After your own pass, give a reviewer that did not build the page (a separate agent, or the owner) only the section frames and the questions above, and ask for the three weakest things per section. Fix or report everything it finds; do not argue it away.

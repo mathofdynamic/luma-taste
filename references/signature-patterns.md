@@ -169,13 +169,18 @@ The owner's rule (review 02): **the UI plays through its items itself; it never 
 - Header row: logo, theme toggle, close button (44px each). Footer row: sign-in (secondary) and sign-up (primary liquid button), always visible.
 - Focus is trapped by `<dialog>.showModal()`; Escape, scrim click and close button close it; focus returns to the menu button.
 
-## 12. Scroll-driven scene (owner review 06)
+## 12. Scroll-driven scene (owner reviews 06, 07)
 
 A scene whose state follows the scroll position, so scrolling tells the story. Every service page has at least one; the owner likes them.
 
-- **Shape:** a tall wrapper (about 200 to 300vh on desktop, 160 to 220vh on phones) with a `position:sticky` stage inside it (`top` under the header, height at most the viewport minus the header). Progress `p` = how far the wrapper has scrolled past the stage, 0 to 1. The stage shows steps or a continuous change driven by `p`: a waveform drawn left to right, panels sliding in order, a figure assembling, numbers counting.
+- **Shape:** a wrapper that is the pinned screen plus the scroll distance (`calc(100svh + min(150vh, 1600px))`, capped so a tall monitor does not scroll forever) with a `position:sticky` stage inside it (`top` under the header).
+- **The pinned screen is a whole screen (owner review 07).** While pinned, the stage is the only thing the visitor sees, on every monitor, including a 1900px-tall one:
+  - **The section heading pins with the stage** (render it inside the stage). A heading above the wrapper scrolls away and leaves panes with no title.
+  - **The stage fills the screen under the header** (`block-size: calc(100svh - header)`) and **centres a capped frame** inside it (`align-content:center`; frame `block-size: min(stage, ~940px)`; rows `auto … minmax(0,1fr)`). Never cap the stage itself at a fixed height pinned to the top: a 620px stage stuck under the header of a 1880px screen is a strip of half-empty panes over an empty screen.
+  - On short screens drop the lead paragraph (and on phones the badge) from the pinned heading rather than clipping the stage.
+  - Progress is measured from the real pin point: `p = (stickyTop - wrapper.top) / (wrapper.height - stage.height)`. Progress `p` = how far the wrapper has scrolled past the stage, 0 to 1. The stage shows steps or a continuous change driven by `p`: a waveform drawn left to right, panels sliding in order, a figure assembling, numbers counting.
 - **Driver:** prefer CSS `animation-timeline: view()` / `scroll()` with `animation-range` where support allows; otherwise one passive `scroll` listener + `requestAnimationFrame` that writes `--scene-progress` (0 to 1) on the `[data-scroll-scene]` element and, for stepped scenes, `data-scene-step`. Everything visual derives from those with `transform`, `opacity`, `clip-path` on non-text shapes, or `stroke-dashoffset`. Never write layout properties per frame; never `scroll-snap` the page; never hijack wheel or touch.
 - **Steps:** text for each step is stacked in one grid cell and cross-fades (no layout shift); the current step's text is also readable without the scene (it lives in the DOM, not only in pixels).
 - **Fallbacks:** under reduced motion, without JS, or below a minimum viewport height (about 560px), the wrapper drops its extra height and the stage shows the finished state with every step's text listed; nothing is hidden.
 - **Phones:** the same scene, shorter wrapper; the stage must fit in the viewport under the header with no clipped text.
-- **Verification:** the audit's `NO_SCROLL_SCENE` scrolls the scene and expects `--scene-progress` or `data-scene-step` (or a CSS scroll/view timeline) to change; `SCROLL_LAYOUT_SHIFT` must stay clean; capture section frames at 3 scroll positions for the critique.
+- **Verification:** the audit's `NO_SCROLL_SCENE` scrolls the scene and expects `--scene-progress` or `data-scene-step` (or a CSS scroll/view timeline) to change. `PINNED_SCENE_NO_HEADING`, `PINNED_SCENE_EMPTY` and `PINNED_SCENE_CLIPPED` judge the pinned screen at 15/50/90% at every audited width plus 1440×1900 and 1920×1080. `SCROLL_LAYOUT_SHIFT` must stay clean. **Look at the pinned screen yourself** at a laptop, a phone and a tall monitor (screenshots at 50% progress) before reporting: a section frame captured outside the pin does not show what the visitor sees.

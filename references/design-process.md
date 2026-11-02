@@ -10,6 +10,17 @@ Luma's visual direction is **pinned** by the brand (dark, gradient, Persian, pre
 4. **Build**, then **critique the rendered result** section by section from the audit's native-size section frames (rest and mid-motion), using the questions in "Section critique" (`owner-review-log.md`), then hand the same frames to a reviewer who did not build the page. Chanel's rule: before leaving the house, remove one accessory. Cut the decoration that does not serve the brief.
 5. **Distrust your own "looks fine".** The builder sees the design they intended. If you catch yourself writing "close enough", "roughly aligned" or "minor" about something in a screenshot, that is a defect you have already found: fix it or report it.
 
+## Page shape: every page its own (owner review 06)
+
+Service pages share tokens, materials, motion timing and components, not a skeleton. Before the plan:
+
+1. **Write the ledger.** For the last three pages built, list each section's shape in a few words (for example: "hero copy + phase studio", "list beside one stage", "4-card grid with demos", "live catalog grid", "sticky FAQ + list"). Put it in the plan.
+2. **Choose from what the service has to explain**, not from the previous page's parts. A voice service can be read as a waveform you scroll along; a try-on as a figure that dresses itself; a workflow as a canvas whose nodes connect as you scroll. Then pick shapes that differ from the ledger: at most one section may share a shape with the previous page, and the hero must not repeat the previous hero's composition.
+3. **Shape vocabulary** (mix, do not default): full-width scroll scene (pinned stage whose state follows scroll progress); split hero with an object instead of an app window; asymmetric bento of mini explainers (the home bento is the benchmark); horizontal strip or timeline; a single large interactive object; editorial text with inline media; numbered story told down the page; compact comparison table; quote or statement band; spec sheet.
+4. **One outstanding moment, many quiet ones.** One section per page earns attention (often the scroll scene); the rest explain with small looping or hover stories like the home bento (an orbit, a document being read, an infinity line, prompt chips, a few lines of typed code).
+5. **At least one scroll-driven scene** (`signature-patterns.md` §12). It replaces a self-playing board where the story is a sequence; do not add both for the same story.
+6. In the report, show the ledger next to this page's shapes.
+
 ## Luma's pinned choices vs generic-design tells
 
 | Generic-design warning | Luma decision |

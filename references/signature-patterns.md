@@ -168,3 +168,14 @@ The owner's rule (review 02): **the UI plays through its items itself; it never 
 - Items: icon plate + label rows, 48px tall; active page row shows the pill; accordions rotate their chevron and reveal sub-items (with icons) using the same stagger.
 - Header row: logo, theme toggle, close button (44px each). Footer row: sign-in (secondary) and sign-up (primary liquid button), always visible.
 - Focus is trapped by `<dialog>.showModal()`; Escape, scrim click and close button close it; focus returns to the menu button.
+
+## 12. Scroll-driven scene (owner review 06)
+
+A scene whose state follows the scroll position, so scrolling tells the story. Every service page has at least one; the owner likes them.
+
+- **Shape:** a tall wrapper (about 200 to 300vh on desktop, 160 to 220vh on phones) with a `position:sticky` stage inside it (`top` under the header, height at most the viewport minus the header). Progress `p` = how far the wrapper has scrolled past the stage, 0 to 1. The stage shows steps or a continuous change driven by `p`: a waveform drawn left to right, panels sliding in order, a figure assembling, numbers counting.
+- **Driver:** prefer CSS `animation-timeline: view()` / `scroll()` with `animation-range` where support allows; otherwise one passive `scroll` listener + `requestAnimationFrame` that writes `--scene-progress` (0 to 1) on the `[data-scroll-scene]` element and, for stepped scenes, `data-scene-step`. Everything visual derives from those with `transform`, `opacity`, `clip-path` on non-text shapes, or `stroke-dashoffset`. Never write layout properties per frame; never `scroll-snap` the page; never hijack wheel or touch.
+- **Steps:** text for each step is stacked in one grid cell and cross-fades (no layout shift); the current step's text is also readable without the scene (it lives in the DOM, not only in pixels).
+- **Fallbacks:** under reduced motion, without JS, or below a minimum viewport height (about 560px), the wrapper drops its extra height and the stage shows the finished state with every step's text listed; nothing is hidden.
+- **Phones:** the same scene, shorter wrapper; the stage must fit in the viewport under the header with no clipped text.
+- **Verification:** the audit's `NO_SCROLL_SCENE` scrolls the scene and expects `--scene-progress` or `data-scene-step` (or a CSS scroll/view timeline) to change; `SCROLL_LAYOUT_SHIFT` must stay clean; capture section frames at 3 scroll positions for the critique.

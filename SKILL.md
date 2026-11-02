@@ -49,6 +49,7 @@ These come from the owner's reviews of the site. They override generic design ad
 19. **Persian first.** RTL, logical properties, no letter-spacing on Persian text, readable line-height 1.8, real Persian copy.
 20. **Card rows are sized by their content, not by their item count (owner review 04).** Text-and-demo cards are at least 280px wide with demo stages of at least 220px, at most four per row; five or more items become 2 + 3 rows or a list beside one shared stage. Titles, text and demos share lines across a row, nothing inside a card is a hole, and a still frame of any story section looks finished. (`layout-and-components.md` §7.)
 21. **Two columns fill the row together (owner review 05).** A list of steps, tabs or cases beside a taller stage stretches to the stage (`align-items:stretch`, `grid-auto-rows:1fr`) or the stage gets shorter; a desktop grid list fills its span (`grid-template-columns:minmax(0,1fr)`, never a leftover `justify-content:center`); inactive items keep a border. No empty band above, below or beside a column. (`layout-and-components.md` §8.)
+22. **Every page has its own shape (owner review 06).** Service pages must not share one template (hero + studio, list-beside-stage board, card grid, catalog, FAQ, repeated). Before building, write the section-shape ledger of the last pages and choose different shapes, rhythm and layouts for this one, inside Luma's tokens and rules. Explain with small, quiet home-bento-style animations, keep one outstanding attention moment, and give every service page **at least one scroll-driven scene** whose progress follows the scroll position (`NO_SCROLL_SCENE`; `design-process.md` "Page shape", `signature-patterns.md` §12).
 
 ## The motion matrix (required deliverable)
 
@@ -101,6 +102,7 @@ Assets: `assets/luma-tokens.css`, `assets/luma-motion.css`, `assets/luma-motion.
 - Text that is truncated, clipped, under 12px, or letter-spaced in Persian; paragraphs squeezed under about 20 characters per line.
 - A row of five or more equal text-and-demo cards; demo stages under 220px; rows whose titles, text or demos start at different heights; holes inside cards (`DEMO_TOO_SMALL`, `RAGGED_CARD_ROW`, `CARD_DEAD_GAP`); a column floating beside a taller one with empty bands around it (`DEAD_SPACE_BESIDE`).
 - A section judged only from a downscaled full-page capture, or a section critique verdict other than ship or fix.
+- A service page built on the previous page's section skeleton, or with no scroll-driven scene (`NO_SCROLL_SCENE`).
 - Decorative accent lines in cards; a hover glow in a single color; a showcase that waits for clicks; a visible pause button on the marquee; multi-line text revealed by one wipe.
 - Layout shift without input, idle or while scrolling (`IDLE_LAYOUT_SHIFT`, `SCROLL_LAYOUT_SHIFT`).
 - A blur surface that is opaque or blur-only; a large full-screen `backdrop-filter` on mobile.

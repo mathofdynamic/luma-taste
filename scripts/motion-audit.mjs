@@ -5,7 +5,7 @@
  *   npm i -D playwright-core   (or playwright)   # browser: set --chrome to a Chromium/Chrome executable if none is installed
  *   node .agents/skills/luma-taste/scripts/motion-audit.mjs --url http://localhost:3000 --out audit/motion \
  *        [--widths 375,1440] [--themes dark,light] [--chrome /path/to/chrome] [--theme-attr data-theme|class] [--margin 0]
- *        [--enter-ms 600] [--seam]
+ *        [--enter-ms 600] [--seam] [--service]   # --service: a missing scroll-driven scene is a FAIL (owner review 06)
  *
  * Checks (exit code 1 if any FAIL): loops running off-screen, clipped/ellipsized text, horizontal overflow,
  * text < 12px, letter-spacing on Persian text, reduced-motion behavior, no-JS visibility, entrance timing
@@ -383,6 +383,24 @@ for (const width of widths) {
       await page.waitForTimeout(3000);
       const stuck = await page.evaluate(() => document.getAnimations().filter((a) => a.playState === 'running' && a.effect?.getTiming().iterations === Infinity).map((a) => a.effect.target?.closest?.('[data-loop=skeleton]')).filter((el) => el && [...el.querySelectorAll('img')].some((i) => i.complete && i.naturalWidth > 0)).length);
       if (stuck) add('FAIL', 'SKELETON_AFTER_LOAD', where, `${stuck} loading shimmer(s) still running over a decoded image (remove data-loop="skeleton" / data-loading on load and on error)`);
+    }
+    if (theme === themes[0]) { // owner review 06: every service page has at least one scene whose progress follows the scroll position
+      // a decorative pseudo-element glow (the final CTA's) or a small element on a view() timeline is not a scene
+      const css = await page.evaluate(() => document.getAnimations().some((a) => { if (!a.timeline || a.timeline instanceof DocumentTimeline || a.effect?.pseudoElement) return false; const t = a.effect?.target; return !!t && (t.closest?.('[data-scroll-scene]') || t.getBoundingClientRect().height >= 160); }));
+      let driven = css;
+      if (!driven) {
+        const scenes = await page.evaluate(() => [...document.querySelectorAll('[data-scroll-scene]')].map((el, i) => { el.setAttribute('data-lm-scene', String(i)); return String(i); }));
+        for (const id of scenes) {
+          const read = () => page.evaluate((i) => { const el = document.querySelector(`[data-lm-scene="${i}"]`); return getComputedStyle(el).getPropertyValue('--scene-progress').trim() + '|' + (el.getAttribute('data-scene-step') || ''); }, id);
+          await page.evaluate((i) => { const el = document.querySelector(`[data-lm-scene="${i}"]`); scrollTo(0, el.getBoundingClientRect().top + scrollY - innerHeight * .9); }, id);
+          await page.waitForTimeout(400); const a = await read();
+          await page.evaluate((i) => { const el = document.querySelector(`[data-lm-scene="${i}"]`); const r = el.getBoundingClientRect(); scrollTo(0, r.top + scrollY + Math.max(0, r.height - innerHeight) * .6); }, id);
+          await page.waitForTimeout(400); const b = await read();
+          if (a !== b) { driven = true; break; }
+        }
+      }
+      if (!driven) add(args.service ? 'FAIL' : 'WARN', 'NO_SCROLL_SCENE', where, 'no animation follows the scroll position: a service page needs at least one scroll-driven scene (CSS scroll()/view() timeline, or [data-scroll-scene] exposing --scene-progress or data-scene-step); see signature-patterns.md section 12');
+      await page.evaluate(() => scrollTo(0, 0)); await page.waitForTimeout(300);
     }
     if (theme === themes[0]) { // sets of 3+ pressed/selected buttons are showcases: they must play themselves
       const groups = await page.evaluate(() => {

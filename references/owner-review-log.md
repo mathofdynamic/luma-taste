@@ -127,6 +127,13 @@ Format: **what was shipped → why it was rejected → the rule → how to check
     - Rules: `layout-and-components.md` §8: lists beside a stage stretch to the row with `1fr` rows, desktop grid lists fill their span, inactive items keep a border; the section critique adds the question "does every column fill the row?".
     - Check: audit `DEAD_SPACE_BESIDE` (FAIL for lists of cards or buttons, WARN for plain copy).
 
+## Review 06 — Service pages share one template (2026-11-02)
+
+34. **Six service pages in a row (image generation, image editing, background removal, smart assistant, video generation, video enhancement) were built on almost the same skeleton:** hero copy beside a phase-engine studio, a list of cases beside one stage, a grid of cards with a small demo, a model list or catalog, the FAQ with a callout, the final CTA. The owner: "almost every single page in Luma is looking the same … this is not a Luma taste."
+    - Root cause: each page was planned from the previous page's working parts (reuse of the studio engine, the autoplay board, the subgrid card row) instead of from what this service needs to explain. Correctness rules were checked (dead space, card rows, audits), but nothing asked whether the page looked like its siblings, and no rule asked for scroll-driven motion, which the owner personally likes.
+    - Rules: SKILL.md rule 22. Before planning, write the **page-shape ledger** (`design-process.md` "Page shape"): the section shapes of the last three pages, then choose different ones for this page. Explain with small home-bento-style animations (the benchmark), keep one outstanding attention moment, and build at least one **scroll-driven scene** (`signature-patterns.md` §12). Stay inside the tokens, materials, motion timing and every earlier rule.
+    - Check: audit `NO_SCROLL_SCENE` (FAIL with `--service`); the section critique asks "Different from its siblings?" with the ledger in the report.
+
 ## Section critique (required before reporting, owner review 04)
 
 The audit proves behaviour, not composition. Composition is checked here, section by section, by looking.
@@ -142,6 +149,7 @@ The audit proves behaviour, not composition. Composition is checked here, sectio
    - **Still frames:** do the `-rest` frame and the `-mid` frame both look finished and consistent (no half-typed text, empty canvases, mismatched badge or button states)?
    - **Clutter:** any card inside a card that is not a stage, any element marked twice (number plus icon), any decoration that does not carry information?
    - **Phone rhythm:** at 375, is the section a long run of look-alike cards?
+   - **Different from its siblings (owner review 06):** does this section reuse the shape of a section on the previous three pages (same layout, same component, same rhythm)? If yes, is that a deliberate choice you can defend, or a habit? Habit is a fix.
    - **Benchmark:** put it next to the home bento (`layout-and-components.md` §6). Is it as legible and as calm? If not, name the gap.
 4. **Verdicts are binary: ship or fix.** "Close enough", "roughly fine", "acceptable" and "minor" are not verdicts. Anything you noticed is either fixed now or listed to the owner as a known issue with its screenshot; it is never silently accepted.
 5. **Fresh eyes.** The builder sees the intended design, not the rendered one. After your own pass, give a reviewer that did not build the page (a separate agent, or the owner) only the section frames and the questions above, and ask for the three weakest things per section. Fix or report everything it finds; do not argue it away.
@@ -172,4 +180,5 @@ The audit proves behaviour, not composition. Composition is checked here, sectio
 - [ ] Explainer sections reach the bento benchmark (playing films, not twitches).
 - [ ] Card rows: cards at least 280px and demo stages at least 220px wide, at most 4 text-and-demo cards per row, no five-equal-column rows (`DEMO_TOO_SMALL` clean).
 - [ ] Rows share lines and have no holes (`RAGGED_CARD_ROW`, `CARD_DEAD_GAP` clean); paragraphs are not squeezed (`NARROW_MEASURE` clean or each one accepted with a reason).
+- [ ] Page-shape ledger in the report: this page's section shapes differ from the last three pages; at least one scroll-driven scene (`NO_SCROLL_SCENE` clean with `--service`).
 - [ ] Section critique done from the native-size section frames (rest and mid), every verdict ship or fix, a fresh-eyes reviewer's findings handled, table in the report.

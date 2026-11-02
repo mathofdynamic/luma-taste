@@ -141,6 +141,13 @@ Format: **what was shipped → why it was rejected → the rule → how to check
     - Rules: `signature-patterns.md` §12 "The pinned screen is a whole screen": the heading pins with the stage; the stage fills the screen and centres a capped frame; progress is measured from the real pin point. Visual proof of the pinned screen (laptop, phone, tall monitor) goes in the report.
     - Check: audit `PINNED_SCENE_NO_HEADING`, `PINNED_SCENE_EMPTY` (more than 35% of the screen under the header empty above or below the content), `PINNED_SCENE_CLIPPED`, at every width plus 1440×1900 and 1920×1080.
 
+## Review 08 — Out of the grid, dead space, poor explainers (2026-11-02)
+
+36. **Upscale page:** the hero image bled off the screen edge, out of the page grid; the pinned zoom scene had a side column of steps shorter than the image, leaving a tall empty band beside it; the three capability explainers (a ring of squares, a hill with dots, a box in a box) were "poorly designed … the animation looks really poor". The owner: "how can you not see these issues? … consider adding a proof validator to the Skill, we can't continue messing up pages like this."
+    - Root cause: the builder judged its own work from element screenshots and rest frames, approved its own choices (the bleed was intended), and skipped the fresh-eyes review that the section critique already required. Nothing measured the page column, columns inside pinned scenes, or explainers frame by frame.
+    - Rules: SKILL.md rule 23 and the proof gate (`scripts/proof.mjs`, `performance-and-verification.md` "Proof gate"). Content stays in the page column; a pinned stage is as tall as its capped frame and pins centred, with steps under it rather than beside it (`signature-patterns.md` §12); explainers are built from the real subject and judged in every filmstrip frame.
+    - Check: `GRID_ESCAPE`, `COLUMN_DEAD_SPACE`, `EXPLAINER_SPARSE`, and `proof.mjs --verify` (every image has a builder and a fresh-eyes verdict of ship, proof newer than the build). Verified: on the rejected build it reported exactly the hero escape, the zoom side column and the two sparsest explainers.
+
 ## Section critique (required before reporting, owner review 04)
 
 The audit proves behaviour, not composition. Composition is checked here, section by section, by looking.

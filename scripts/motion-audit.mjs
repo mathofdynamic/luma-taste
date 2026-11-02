@@ -512,7 +512,10 @@ if (themes.length > 1) { // prove the theme switch really changed the page (othe
         const pin = parseFloat(getComputedStyle(st).top) || 0;
         scrollTo(0, el.getBoundingClientRect().top + scrollY - pin + (el.offsetHeight - st.offsetHeight) * f);
         await new Promise((res) => setTimeout(res, 700));
-        const s = st.getBoundingClientRect(); const avail = innerHeight - pin;
+        const s = st.getBoundingClientRect();
+        // the screen under the site header (a stage may pin centred, below its sticky minimum)
+        const hdr = (() => { let e = document.elementFromPoint(innerWidth / 2, 2); for (; e && e !== document.body; e = e.parentElement) if (/fixed|sticky/.test(getComputedStyle(e).position) && !el.contains(e)) return Math.max(0, e.getBoundingClientRect().bottom); return 0; })();
+        const avail = innerHeight - hdr;
         const shown = (e) => { const cs = getComputedStyle(e); return cs.visibility !== 'hidden' && +cs.opacity > 0; };
         // what is actually painted: the box cut by every clipping ancestor up to the scene (a zoomed image inside an
         // overflow:hidden viewer is cropped on purpose and is not clipping)
@@ -520,11 +523,11 @@ if (themes.length > 1) { // prove the theme switch really changed the page (othe
           for (let a = e.parentElement; a && a !== el.parentElement; a = a.parentElement) { if (getComputedStyle(a).overflow === 'visible') continue; { const c = a.getBoundingClientRect(); t = Math.max(t, c.top); bt = Math.min(bt, c.bottom); l = Math.max(l, c.left); r = Math.min(r, c.right); } }
           return { top: t, bottom: bt, width: r - l, height: bt - t }; };
         const marks = [...el.querySelectorAll('*')].filter((e) => ([...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim()) || e.matches('svg,img,video,canvas,[data-diagram] > *')) && shown(e))
-          .map(rect).filter((b) => b.width > 0 && b.height > 0 && b.bottom > pin && b.top < innerHeight);
+          .map(rect).filter((b) => b.width > 0 && b.height > 0 && b.bottom > hdr && b.top < innerHeight);
         const top = Math.min(...marks.map((b) => b.top)), bottom = Math.max(...marks.map((b) => b.bottom));
-        const heading = [...el.querySelectorAll('h1,h2,h3')].some((h) => { const b = h.getBoundingClientRect(); return b.height > 0 && b.top >= pin - 1 && b.bottom <= innerHeight; });
+        const heading = [...el.querySelectorAll('h1,h2,h3')].some((h) => { const b = h.getBoundingClientRect(); return b.height > 0 && b.top >= hdr - 1 && b.bottom <= innerHeight; });
         const clipped = [...st.querySelectorAll('*')].filter((e) => { const b = rect(e); return b.height > 0 && b.width > 0 && shown(e) && b.bottom > Math.min(s.bottom, innerHeight) + 1; }).length;
-        return { heading, clipped, emptyTop: Math.round((Math.max(top, pin) - pin) / avail * 100), emptyBottom: Math.round((innerHeight - Math.min(bottom, innerHeight)) / avail * 100) };
+        return { heading, clipped, emptyTop: Math.round((Math.max(top, hdr) - hdr) / avail * 100), emptyBottom: Math.round((innerHeight - Math.min(bottom, innerHeight)) / avail * 100) };
       }, [i, f]);
       const where = `${width}x${height} scene ${i + 1} at ${Math.round(f * 100)}%`;
       if (!r.heading) add('FAIL', 'PINNED_SCENE_NO_HEADING', where, 'no heading is on screen while the scene is pinned: pin the section heading with the stage so the pinned screen says what it shows (signature-patterns.md section 12)');

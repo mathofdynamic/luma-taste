@@ -81,3 +81,19 @@ The audit proves structure and behavior (what runs, when, on which properties, w
 No-JS visibility waits for DOM and fonts, not the load event (a stalled external image must not prevent inspecting readable SSR content). Seam capture settles finite entrance/explainer effects for 1000ms before sampling the isolated loop so parent opacity is not mistaken for a loop discontinuity.
 
 Seam captures use a fixed crop of the clipping viewport, rather than scrolling a transformed loop element into view for each frame. This keeps the near-wrap and endpoint frames comparable for translated marquees.
+
+## Proof gate (owner review 08)
+
+The motion audit proves behaviour. The proof gate proves what the visitor sees, and nothing is reported until it passes.
+
+1. Build and serve the page, then capture: `node scripts/proof.mjs --url <page> --out proof/<page> --build .next/BUILD_ID [--chrome <path>]`. It writes:
+   - `walk/`: viewport screenshots every 0.75 screen at 375x800, 768x1024, 1440x900 and 1870x1880 (the owner's tall monitor). Pinned scenes are seen pinned.
+   - `films/`: every `[data-story-card]` explainer at 0, 25, 50, 75 and 100% of its story at 1440 and 375. The card's own entrance is excluded, so the frames show the story itself.
+   - `index.html` (every image in order), `findings.json`, and `REVIEW.md`, a verdict table with one row per image.
+2. Geometry checks run on every walk frame (FAIL):
+   - `GRID_ESCAPE`: a content block (at least 120x80) whose content box leaves the page column (max 1200px with 20px gutters). Exempt: full-width bands and `[data-bleed]`.
+   - `COLUMN_DEAD_SPACE`: in a single row of side-by-side columns (each at least 200px, the row at least 240px tall), the largest band of the row where a column paints nothing (text, media, `[data-diagram]` areas, filled or bordered boxes) exceeds 120px and 20% of the row. Pinned scenes are measured pinned.
+   - `EXPLAINER_SPARSE`: an explainer whose painted content covers under 35% of its stage at rest.
+3. Judge every image at full size, then give the same images to a fresh-eyes reviewer that did not build the page. With this owner, that means a T3 delegate on the allowed model. Both write `ship` or `fix: <reason>` per row, and the reviewer is named on the `Fresh-eyes reviewer:` line. A `fix` means change the page, rebuild, recapture and review again.
+4. `node scripts/proof.mjs --verify --out proof/<page> --build .next/BUILD_ID` must print `PROOF PASSED`. It fails on any geometry failure, a missing or non-ship verdict, an unnamed reviewer, or a proof older than the build.
+5. Embed the key walk frames and the explainer filmstrips in the report.

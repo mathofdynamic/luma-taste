@@ -124,6 +124,8 @@ function geometry() {
     const boxes = kids.map((k) => ({ k, b: k.getBoundingClientRect() }));
     const side = boxes.filter(({ b }) => b.width >= 200 && boxes.some((o) => o.b !== b && o.b.width >= 200 && Math.abs(o.b.left - b.left) > 40 && o.b.top < b.bottom && b.top < o.b.bottom));
     if (side.length < 2) return;
+    // columns that are moving (a scroll scene mid-transition) cannot be judged as a layout; skip until they rest
+    if (side.some(({ k }) => getComputedStyle(k).transform !== 'none')) return;
     // one row only: every column overlaps every other vertically (a grid with spanning tiles has several rows)
     if (side.some((a) => side.some((o) => o.b.top >= a.b.bottom - 1 || a.b.top >= o.b.bottom - 1))) return;
     const top = Math.min(...side.map(({ b }) => b.top)), bottom = Math.max(...side.map(({ b }) => b.bottom)), h = bottom - top;

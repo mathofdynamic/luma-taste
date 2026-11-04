@@ -126,10 +126,12 @@ function geometry() {
     if (side.length < 2) return;
     // columns that are moving (a scroll scene mid-transition) cannot be judged as a layout; skip until they rest
     if (side.some(({ k }) => getComputedStyle(k).transform !== 'none')) return;
+    const sticky = (k) => getComputedStyle(k).position === 'sticky'; // a sticky rail is shorter than its neighbour by design
     // one row only: every column overlaps every other vertically (a grid with spanning tiles has several rows)
     if (side.some((a) => side.some((o) => o.b.top >= a.b.bottom - 1 || a.b.top >= o.b.bottom - 1))) return;
     const top = Math.min(...side.map(({ b }) => b.top)), bottom = Math.max(...side.map(({ b }) => b.bottom)), h = bottom - top;
     side.forEach(({ k }) => {
+      if (sticky(k)) return;
       const marks = [k, ...k.querySelectorAll('*')].filter((e) => e !== k && leaf(e) && shown(e)).map(paint).filter((b) => b.width > 0 && b.height > 0)
         .map((b) => [Math.max(top, b.top), Math.min(bottom, b.bottom)]).filter(([a, z]) => z > a).sort((a, z) => a[0] - z[0]);
       if (!marks.length) return;

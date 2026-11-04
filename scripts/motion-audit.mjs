@@ -262,6 +262,7 @@ function layoutProbe() {
     if (!(a.right <= b.left + 1 || b.right <= a.left + 1) || Math.min(a.width, b.width) < 240) return; // side by side only
     const rowTop = Math.min(a.top, b.top), rowBottom = Math.max(a.bottom, b.bottom), rowHeight = rowBottom - rowTop; if (rowHeight < 240) return;
     kids.forEach((k) => {
+      if (getComputedStyle(k).position === 'sticky') return; // a sticky rail is shorter than its neighbour by design
       const items = blocks(k); if (!items.length) return;
       const rs = items.map((x) => x.getBoundingClientRect()), kr = k.getBoundingClientRect();
       const top = Math.min(...rs.map((r) => r.top)), bottom = Math.max(...rs.map((r) => r.bottom)), left = Math.min(...rs.map((r) => r.left)), right = Math.max(...rs.map((r) => r.right));

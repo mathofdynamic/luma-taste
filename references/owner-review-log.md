@@ -148,6 +148,13 @@ Format: **what was shipped → why it was rejected → the rule → how to check
     - Rules: SKILL.md rule 23 and the proof gate (`scripts/proof.mjs`, `performance-and-verification.md` "Proof gate"). Content stays in the page column; a pinned stage is as tall as its capped frame and pins centred, with steps under it rather than beside it (`signature-patterns.md` §12); explainers are built from the real subject and judged in every filmstrip frame.
     - Check: `GRID_ESCAPE`, `COLUMN_DEAD_SPACE`, `EXPLAINER_SPARSE`, and `proof.mjs --verify` (every image has a builder and a fresh-eyes verdict of ship, proof newer than the build). Verified: on the rejected build it reported exactly the hero escape, the zoom side column and the two sparsest explainers.
 
+## Review 09 — Content pages were built like service pages (2026-11-09)
+
+37. **Help center (مرکز آموزش):** the first build framed independent help topics as an ordered course with a numbered path, progress and an in-page reader that showed every lesson on one page; the rebuild still carried service-page devices onto it: a pinned scroll scene touring the topics, a self-animating hero card, bento-style panels. The owner: "these are not lessons that must be taken one after another … there is no order", "when they click on a lesson, move them into a page dedicated for that lesson", and "the skill was mostly created for services pages … when a page is not a service page we don't have to make it look like a services page."
+    - Root cause: the service-page rules (rule 22 "own shape" and "at least one scroll-driven scene", the bento benchmark, the self-playing UI) were read as binding on every page, so a help center was designed to show off instead of to help visitors find and read an article. Nothing asked what kind of page it was.
+    - Rules: SKILL.md "Before step 0: classify the page", rule 24 and "Content pages": docs, help center, each help article, blog, each post, about, contact, legal, terms, security are content pages; they use the standard layout for their kind in Luma's identity, with quiet functional motion; each article or post has its own URL; independent topics are never numbered or ordered.
+    - Check: the plan starts with the page classification; for a content page the motion audit runs without `--service`, the layout matches the standard shape table (or the plan says why not), and the fresh-eyes brief asks about findability and readability, not the bento benchmark.
+
 ## Section critique (required before reporting, owner review 04)
 
 The audit proves behaviour, not composition. Composition is checked here, section by section, by looking.
@@ -195,5 +202,7 @@ The audit proves behaviour, not composition. Composition is checked here, sectio
 - [ ] Explainer sections reach the bento benchmark (playing films, not twitches).
 - [ ] Card rows: cards at least 280px and demo stages at least 220px wide, at most 4 text-and-demo cards per row, no five-equal-column rows (`DEMO_TOO_SMALL` clean).
 - [ ] Rows share lines and have no holes (`RAGGED_CARD_ROW`, `CARD_DEAD_GAP` clean); paragraphs are not squeezed (`NARROW_MEASURE` clean or each one accepted with a reason).
-- [ ] Page-shape ledger in the report: this page's section shapes differ from the last three pages; at least one scroll-driven scene (`NO_SCROLL_SCENE` clean with `--service`).
+- [ ] Page classified as service or content page at the top of the plan (owner review 09).
+- [ ] Service pages: page-shape ledger in the report: this page's section shapes differ from the last three pages; at least one scroll-driven scene (`NO_SCROLL_SCENE` clean with `--service`).
+- [ ] Content pages: standard layout for the kind, each article or post on its own URL, no ordering of independent topics, no service-page devices, quiet motion; consistent with other pages of the same kind.
 - [ ] Section critique done from the native-size section frames (rest and mid), every verdict ship or fix, a fresh-eyes reviewer's findings handled, table in the report.

@@ -10,7 +10,11 @@ Luma's visual direction is **pinned** by the brand (dark, gradient, Persian, pre
 4. **Build**, then **critique the rendered result** section by section from the audit's native-size section frames (rest and mid-motion), using the questions in "Section critique" (`owner-review-log.md`), then hand the same frames to a reviewer who did not build the page. Chanel's rule: before leaving the house, remove one accessory. Cut the decoration that does not serve the brief.
 5. **Distrust your own "looks fine".** The builder sees the design they intended. If you catch yourself writing "close enough", "roughly aligned" or "minor" about something in a screenshot, that is a defect you have already found: fix it or report it.
 
-## Page shape: every page its own (owner review 06)
+## Page type first (owner review 09)
+
+Before choosing any shape, classify the page: **service page** (explains or sells a service or product) or **content page** (docs, help center and each help article, blog and each post, about, contact, legal, security). Content pages use the standard layout for their kind from SKILL.md "Content pages" and skip the page-shape ledger, the required scroll scene and the explainer bento; they stay consistent with pages of the same kind. Everything below in "Page shape" is for service pages.
+
+## Page shape: every service page its own (owner review 06)
 
 Service pages share tokens, materials, motion timing and components, not a skeleton. Before the plan:
 

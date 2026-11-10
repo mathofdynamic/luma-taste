@@ -184,3 +184,18 @@ A scene whose state follows the scroll position, so scrolling tells the story. E
 - **Fallbacks:** under reduced motion, without JS, or below a minimum viewport height (about 560px), the wrapper drops its extra height and the stage shows the finished state with every step's text listed; nothing is hidden.
 - **Phones:** the same scene, shorter wrapper; the stage must fit in the viewport under the header with no clipped text.
 - **Verification:** the audit's `NO_SCROLL_SCENE` scrolls the scene and expects `--scene-progress` or `data-scene-step` (or a CSS scroll/view timeline) to change. `PINNED_SCENE_NO_HEADING`, `PINNED_SCENE_EMPTY` and `PINNED_SCENE_CLIPPED` judge the pinned screen at 15/50/90% at every audited width plus 1440×1900 and 1920×1080. `SCROLL_LAYOUT_SHIFT` must stay clean. **Look at the pinned screen yourself** at a laptop, a phone and a tall monitor (screenshots at 50% progress) before reporting: a section frame captured outside the pin does not show what the visitor sees.
+
+## 13. The background detail layer (owner review 10)
+
+One decorative layer behind every page, mounted once in the root layout (`aria-hidden`, `pointer-events:none`), first child of a `position:relative` page wrapper so it paints above the sections' flat background colour but below their content. Pieces, all in the theme tokens so dark and light both work:
+
+| Piece | How | Cost |
+|---|---|---|
+| Rails | two 1px lines at `calc(50% ± 600px)` (the page column's edges), `position:fixed` | none: fixed, never repaints on scroll |
+| Margin dot field | `radial-gradient` dots on an 18px grid, `position:fixed`, masked to the margins outside the column and fading toward it | none while scrolling |
+| Pointer light | a 360px element moved with `transform` on `pointermove` (rAF-throttled); the same dot grid as a mask (`mask-position` offset by the pointer so dots line up), filled with the purple → magenta → orange gradient, faded by a radial mask | one small repaint per frame while the pointer moves; only `(hover:hover) and (pointer:fine)`, never under reduced motion |
+| Rail light | a 180px gradient segment travelling each rail (`translate3d`, 11s, the two rails in opposite directions) | compositor only; off under reduced motion |
+| Seams | at each major section start (sections at least 360px apart; the first section opens the page): a dashed 1px hairline across the width, a 9px "+" on each rail (the first seam's in magenta), the section number in Persian digits in the right margin (RTL start) | positions measured once and on `ResizeObserver` of `<main>`; absolute elements |
+| Rings | `repeating-radial-gradient` rings every 72px from the top centre, radially masked, behind the first screen | static |
+
+Rules: lines about 9% and dots about 11% of the text colour; rings fainter; nothing in the column except the seams, which fall in the whitespace between sections. Rails, margin dots, "+" marks and numbers only where the margins exist (from about 1280px wide; numbers from 1360px); on phones only the seams and rings remain. `forced-colors` hides the layer. Do not add a second layer per page: if a page needs a stronger moment, tune that page's hero glow, not the shared layer. Reference implementation: `components/backdrop/` in the Luma landing project.

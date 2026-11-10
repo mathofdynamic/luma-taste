@@ -155,6 +155,13 @@ Format: **what was shipped → why it was rejected → the rule → how to check
     - Rules: SKILL.md "Before step 0: classify the page", rule 24 and "Content pages": docs, help center, each help article, blog, each post, about, contact, legal, terms, security are content pages; they use the standard layout for their kind in Luma's identity, with quiet functional motion; each article or post has its own URL; independent topics are never numbered or ordered.
     - Check: the plan starts with the page classification; for a content page the motion audit runs without `--service`, the layout matches the standard shape table (or the plan says why not), and the fresh-eyes brief asks about findability and readability, not the bento benchmark.
 
+## Review 10 — The background had no details (2026-11-10)
+
+38. **Whole site, after the restyle of every page:** the foreground was designed, the background was not: a flat colour behind every section, empty margins on wide screens, sections that simply stopped. The owner, comparing with Cloudflare and Firecrawl: "the background of our website feels soulless, it feels empty … feels like the designer only thinks about the elements, not the background and the relation of background with items in foreground", "devil is in the details", and "it must be just subtle enough in background … we can even have interactive background elements sometimes … but not too often that makes the website laggy."
+    - Root cause: the skill only described foreground components and motion; nothing asked what sits behind them, so every page was built on an empty canvas.
+    - Rules: SKILL.md rule 25 and `signature-patterns.md` §13: one shared detail layer in the layout (rails on the page column, margin dot field, seams with "+" marks and section numbers, faint rings at the top, a light travelling the rails, pointer light in the margin dots), subtle (about 6 to 11% of the text colour), never behind body text, fixed or transform-only so it costs nothing while scrolling, off under reduced motion and on touch, and hidden from assistive tech.
+    - Check: look at the margins and the section breaks of every page at 1440 and 1870 in dark and light: rails present and aligned with the column, seams in the whitespace between sections (never through content), the pointer light visible in the margins, nothing distracting at a glance; the motion audit shows no new long tasks or layout shift.
+
 ## Section critique (required before reporting, owner review 04)
 
 The audit proves behaviour, not composition. Composition is checked here, section by section, by looking.
@@ -205,4 +212,5 @@ The audit proves behaviour, not composition. Composition is checked here, sectio
 - [ ] Page classified as service or content page at the top of the plan (owner review 09).
 - [ ] Service pages: page-shape ledger in the report: this page's section shapes differ from the last three pages; at least one scroll-driven scene (`NO_SCROLL_SCENE` clean with `--service`).
 - [ ] Content pages: standard layout for the kind, each article or post on its own URL, no ordering of independent topics, no service-page devices, quiet motion; consistent with other pages of the same kind.
+- [ ] Background detail layer present and subtle (owner review 10): rails on the column edges, margin dots, seams with "+" and section numbers at major breaks, nothing crossing content; pointer light and rail light off on touch and under reduced motion; no audit regressions.
 - [ ] Section critique done from the native-size section frames (rest and mid), every verdict ship or fix, a fresh-eyes reviewer's findings handled, table in the report.

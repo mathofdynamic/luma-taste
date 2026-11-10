@@ -32,6 +32,7 @@ Luma Taste guides page work toward LUMA's dark, premium visual identity, express
 ## What it covers
 
 - Page types: service pages get rich motion, scroll scenes and explainers; content pages (docs, help center and articles, blog and posts, about, contact, legal) follow the standard layout for their kind
+- A designed background: one subtle shared detail layer (rails, margin dots, section seams, a little living light) so no page sits on an empty canvas
 - The owner's review log: every pattern the owner rejected on a real page, the rule it became, and a pre-delivery checklist
 - Signature interaction recipes: morphing hover-intent menus, circular theme switch, liquid-fill buttons, the multi-tool hero studio, pointer-following comparisons, skeleton-to-reveal media, explainer stories, the lens testimonial marquee, and the standout mobile menu
 - LUMA color, typography, shape, material, and Persian RTL rules

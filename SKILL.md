@@ -56,6 +56,8 @@ These come from the owner's reviews of the site. They override generic design ad
 
 24. **A content page is designed as the standard pattern for its kind, not as a service page (owner review 09).** Docs, help center, help articles, blog, posts, about, contact and legal pages use the proven, conventional layout for what they are (see "Content pages"), in Luma's identity. No service-page devices are forced on them: no required pinned or scroll-driven scene, no explainer bento, no self-playing studio, no "own shape" race. Reading, finding and acting come first; motion is quiet.
 
+25. **The background is designed too (owner review 10).** A page is not only its foreground: behind every page (service and content alike) there is one shared detail layer that relates the background to the content: rails on the page column's edges, a fine dot field in the margins, a dashed seam with a small "+" on each rail and a section number where major sections begin, faint rings behind the top of the page, and at most one or two living touches (a soft light travelling along a rail, the margin dots brightening in the brand gradient around the pointer). Detail is found, not announced: lines and dots stay around 6 to 11% of the text colour, nothing crosses or sits behind body text, and it is cheap (fixed layers that never repaint on scroll, transform-only motion, no scroll handlers, off under reduced motion and on touch). Build it once in the layout, never per page; tune it, do not multiply it. (`signature-patterns.md` §13.)
+
 ## Content pages (owner review 09)
 
 A content page is judged by how fast a visitor finds, reads or does what they came for. Design it the way the best sites design that kind of page (Stripe and Vercel docs, Linear and Notion help centers, good editorial blogs), then dress it in Luma's identity. Logic first; a conventional layout is a feature here, not a failure of creativity.
@@ -136,6 +138,7 @@ Assets: `assets/luma-tokens.css`, `assets/luma-motion.css`, `assets/luma-motion.
 - A content page (docs, help, article, blog, post, about, contact, legal) dressed as a service page: a pinned scene, explainer bento or self-playing demo forced onto it, ordered "lessons" for independent topics, or all articles rendered inline instead of each on its own page.
 - A pinned scroll scene that shows a strip of content over an empty screen, or pins without its heading (`PINNED_SCENE_EMPTY`, `PINNED_SCENE_NO_HEADING`).
 - Anything without a passing proof gate (`proof.mjs --verify`): content outside the page column, a half-empty column beside a stage, sparse or abstract explainers, or images the fresh-eyes reviewer did not judge.
+- A bare background: a page whose margins and section breaks carry nothing (no rails, dots, seams), or the opposite, a busy background that competes with the content, crosses text or costs frames (owner review 10).
 - Decorative accent lines in cards; a hover glow in a single color; a showcase that waits for clicks; a visible pause button on the marquee; multi-line text revealed by one wipe.
 - Layout shift without input, idle or while scrolling (`IDLE_LAYOUT_SHIFT`, `SCROLL_LAYOUT_SHIFT`).
 - A blur surface that is opaque or blur-only; a large full-screen `backdrop-filter` on mobile.

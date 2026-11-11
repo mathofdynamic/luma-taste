@@ -33,6 +33,7 @@ Luma Taste guides page work toward LUMA's dark, premium visual identity, express
 
 - Page types: service pages get rich motion, scroll scenes and explainers; content pages (docs, help center and articles, blog and posts, about, contact, legal) follow the standard layout for their kind
 - A designed background: one subtle shared detail layer (rails, margin dots, section seams, a little living light) so no page sits on an empty canvas
+- Three page kinds: commodity service pages, content pages, and Luma's own product pages (`/product/*`), which get a bolder, interactive, story-driven design and a shared «لومک» character system
 - The owner's review log: every pattern the owner rejected on a real page, the rule it became, and a pre-delivery checklist
 - Signature interaction recipes: morphing hover-intent menus, circular theme switch, liquid-fill buttons, the multi-tool hero studio, pointer-following comparisons, skeleton-to-reveal media, explainer stories, the lens testimonial marquee, and the standout mobile menu
 - LUMA color, typography, shape, material, and Persian RTL rules
@@ -108,7 +109,7 @@ Use `--chrome <path>` when Playwright cannot find a Chromium executable, and `--
 | Path | Purpose |
 | --- | --- |
 | [`SKILL.md`](SKILL.md) | Invocation, workflow, design standards, and reference map |
-| [`references/`](references/) | Owner review log, signature patterns, identity, layout, motion, entrance, process, and verification guidance |
+| [`references/`](references/) | Owner review log, product pages, signature patterns, identity, layout, motion, entrance, process, and verification guidance |
 | [`assets/`](assets/) | Starter design files and README artwork |
 | [`assets/readme/`](assets/readme/) | Original 3D visuals for this README |
 | [`scripts/motion-audit.mjs`](scripts/motion-audit.mjs) | Browser audit for motion and layout regressions |

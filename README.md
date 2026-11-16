@@ -33,7 +33,7 @@ Luma Taste guides page work toward LUMA's dark, premium visual identity, express
 
 - Page types: service pages get rich motion, scroll scenes and explainers; content pages (docs, help center and articles, blog and posts, about, contact, legal) follow the standard layout for their kind
 - A designed background: one subtle shared detail layer (rails, margin dots, section seams, a little living light) so no page sits on an empty canvas
-- Three page kinds: commodity service pages, content pages, and Luma's own product pages (`/product/*`), which get a bolder, interactive, story-driven design and a shared «لومک» character system
+- Three page kinds: commodity service pages, content pages, and Luma's own product pages (`/product/*`), which stage how each product works inside: one nameable image and its own spatial model per page, use-cases before capabilities, a shared «پردهٔ آخر» ending, product icons in the ServiceIcon family and live 3D agents on the Agents page (owner review 12)
 - The owner's review log: every pattern the owner rejected on a real page, the rule it became, and a pre-delivery checklist
 - Signature interaction recipes: morphing hover-intent menus, circular theme switch, liquid-fill buttons, the multi-tool hero studio, pointer-following comparisons, skeleton-to-reveal media, explainer stories, the lens testimonial marquee, and the standout mobile menu
 - LUMA color, typography, shape, material, and Persian RTL rules

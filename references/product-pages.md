@@ -1,60 +1,126 @@
-# Product pages (owner review 11)
+# Product pages (owner reviews 11 and 12)
 
-Luma has three kinds of page. **Service pages** (`/service/*`) show commodity tools every AI company has: image, edit, video, audio, chat. **Content pages** hold information (docs, help, blog, legal). **Product pages** (`/product/*`, header menu «محصولات») show Luma's own crafted products: Luma Agents, My Teacher (معلم من), Smart Assistant (website chatbot), Workflows and Mini-Apps. The owner wants product pages to go "much further and much deeper with creative design and motion" and to look clearly different from service pages, while staying unmistakably Luma.
+Luma has three kinds of page:
+- **Service pages** (`/service/*`) show commodity tools every AI company has: image, edit, video, audio, chat.
+- **Content pages** hold information: docs, help, blog, legal.
+- **Product pages** (`/product/*`, header menu «محصولات») show Luma's own crafted products: Agents (ایجنت‌ها), My Teacher (معلم من), Smart Assistant (دستیار هوشمند), Workflows (ورک‌فلوها) and Mini-Apps (مینی‌اپ‌ها).
 
-> A service page shows a tool in a window. A product page is a stage where the product performs and the visitor takes part.
+They are the flagship. The owner judges them from the visitor's seat: is it professional, detailed, memorable? Would someone remember it tomorrow?
 
-Creative direction for product pages is drafted with an adviser model (owner choice: Claude Fable 5.2) before planning; the builder still owns the plan, the self-score and the proof gate.
+> A service page shows a tool in a window. A product page stages **how the product works inside**, in a form only that product could have, and the visitor's hand changes the ending.
 
-## 1. Rules (bind only `/product/*`)
+Review 12 rejected the first build of all five pages as "AI slop". The pages were the same object five times over: a pill eyebrow, a centred H2, a dark rounded box with small redrawn dashboard parts inside. Nothing was bigger than a card. The characters were crude grey capsules and the icons were off-family. Creative direction is drafted with an adviser model (owner choice: Claude Fable 5.2, effort xhigh) before planning. Brief it with the owner's review in full. The builder still owns the plan, the self-score (aim for 9 on creativity) and the proof gate.
 
-1. **Classify a third kind: product page.** Every rule here binds only product pages. *Why: unscoped rules leak onto the wrong pages (review 09).*
-2. **The visitor does the product once per page.** At least one scene takes real input (pick, drag, answer, confirm) and its outcome depends on that input. *Why: products are sold by use; hover replays are the service tier.*
-3. **Attract, then hand over.** Every interactive scene plays itself until touched, then gives control, and resumes about 8s after the last input. *Why: keeps rule 15 (the UI plays itself) while adding depth.*
-4. **One object travels the whole page.** Pick a through-line (a task card, a question, a data packet, an app) and show the same object in every section. *Why: a narrative separates a product from a feature list.*
-5. **Sections hand off; they do not just reveal.** The through-line leaves section N toward the next and is the first thing to arrive in N+1, each inside its own clipped stage. *Why: the owner asked for agents carrying the transition, not a transition.*
-6. **One stage per screen, full column width.** No "copy beside a studio window" hero and no card grid as a main section. *Why: that skeleton is the service template (review 06).*
-7. **Motion has beats.** Staged actions are anticipation (120ms), action (`--lm-ease-move`), settle (`--lm-ease-out`). Ordinary content keeps the 600ms entrance. *Why: service motion is legato; products need rhythm without new curves.*
-8. **At most two scenes carry weight.** One hero scene and one pinned scroll scene are "loud"; everything else is home-bento calm. *Why: five loud scenes read as a theme park.*
-9. **Everything staged is the real product.** Real node types, real agent fields, real copy, labelled sample data («نمونه»). *Why: `EXPLAINER_SPARSE` and the abstract-doodle rejection (review 08).*
-10. **Never changes:** tokens, fonts, neutral chrome, gradient discipline (at most 2 animated gradient words in view), glass levels, the shared background layer, the page grid, no accent lines, no clipped text, transform/opacity only, zero idle layout shift, the proof gate. *Why: different staging, same brand.*
+## 1. Principles (each with its test)
 
-Retired shapes: the old `/service/workflow` (nodes dropping in on scroll) and `/service/assistant` (a chat studio beside copy) go into the page-shape ledger as taken; product pages must not reuse them. The old URLs redirect permanently to the product pages.
+| # | Principle | Test |
+|---|---|---|
+| 1 | **Meaning first.** Write the sentence the visitor should be able to say, then design the scene. | Cover the heading: can a stranger state the claim from the picture alone? |
+| 2 | **Stage the mechanism, not the screen.** Do not redraw dashboard panels. Show how the product works inside (retrieval, delegation, certainty, branching), drawn in a way only this product could be. | If the scene could be traced from a dashboard screenshot, it fails ("stop copying the dashboard; think in the user's shoes"). |
+| 3 | **One nameable image per page.** | The owner can name it the next day in three words. |
+| 4 | **Each page has its own spatial model and layout signature.** At most one «eyebrow + centred H2 + boxed stage» per page. | Greyscale two pages' section silhouettes: can you tell which is which? |
+| 5 | **Every motion is a verb of the product:** summon, check, remember, find, branch, build. | If the only verb is floats, glows or pulses, cut it. |
+| 6 | **Three reading distances.** A silhouette at three metres, content at arm's length, small true details up close: file names, «روند کار · ۶ قدم · ۵۳ لوم», dates. | Crop any 300×300 px of a stage: is something designed in it? |
+| 7 | **Characters are large and in the product's own style, or absent.** | At least 120px on desktop and 88px on a phone, recognisable as the dashboard's own avatars in silhouette. |
+| 8 | **The visitor's hand changes the ending.** The page ends on its own object in the state the visitor left it. | Two visitors who chose differently see different final frames. |
+| 9 | **Lead with use-cases, not feature lists.** Capabilities are reached through a job the visitor picks (a preset lights only the switches that job needs). | Does any section read like a spec sheet? |
+| 10 | **Everything staged is true.** Real node names, field names, plan figures and copy, word for word. Samples are labelled «نمونه». Maths is checked. No competitor names. Claims missing from the fact files are not made. | Every string traces to the dashboard, the knowledge files or a labelled sample. |
 
-## 2. The character system: «لومک» (little Luma agents)
+Still binding from review 11:
+- Attract then hand over: self-play until touched, resume about 8–15 seconds after the last input, pause off-screen.
+- At most two loud scenes per page: the hero and one pinned scene.
+- Standard scroll entrances on every section (`data-reveal`), including inside client components.
+- Tokens, fonts, neutral chrome and gradient discipline.
+- Transform and opacity motion only, with zero layout shift.
+- The proof gate.
 
-- **Drawing:** one inline SVG `<symbol>`, 24×32 units, rendered 32–48px tall, never taller than an H2 line. Body: a capsule in `--surface-2` with a 1.5px `--border-strong` hairline. Face: one visor slot holding a single spark dot; no mouth, no eyebrows, no hands. Two 2px line legs; two line arms that exist only while carrying. The spark is the only colour, one brand stop per character (purple, magenta or orange), which keeps "neutral chrome, one warm spark".
-- **Personality:** a stagehand: competent, quick, quiet. Emotion comes only from posture: lean into the walk, a 2px squash on landing, the spark sliding toward what it looks at, one blink every 4–7s.
-- **Movement:** three nested transform-only CSS keyframe layers. Track wrapper: `translate3d` along the path, linear, about 140px/s. Body: 2px bob at twice the step rate. Legs: alternate `rotate(±22deg)`, 320ms ease-in-out. Carry: arms fade in, the object lifts 6px and tilts 3° (the 120ms grab beat), then shares the carrier's timing. Hand-off: the giver stops, the object slides 12px, the receiver's spark flashes, the giver leaves the way it came.
-- **Word swap (Agents hero):** all candidate words stacked in one grid cell sized to the widest (no shift); each word its own compositor layer, never re-laid out; the real sentence with every word is in the heading for screen readers, the animated copy is `aria-hidden`.
-- **RTL:** characters face their travel direction with `scaleX(var(--dir))`; outgoing objects exit toward inline-start, incoming enter from inline-end. The track is physical and commented as an exception, like the marquee.
-- **Taste limits:** at most 3 on screen (1 moving on a phone). They never wave, celebrate, speak in bubbles or look at the visitor (one exception: the Workflows runner turns to ask the visitor a question). They only do jobs the product really does.
-- **Where they appear:** Agents: the full cast (they are the product). Workflows: one runner (personifies a run). Mini-Apps: one inspector cameo (the safety review is a real actor). **Not** on My Teacher (a mascot makes a learning product read as a children's app; its language is ink and paper) or Smart Assistant (the widget itself is the character).
+## 2. Shared pieces
 
-## 3. Product concepts (starting points; the page plan may refine them)
+- **Product icons:** the five are drawn in the ServiceIcon family.
+  - The spec: 24 viewBox, 1.5 stroke, round caps, a `data-piece` that plays the product's verb on hover or focus. The rest state is the complete drawing.
+  - They live in `ServiceIcon` as `product-agents|teacher|assistant|workflows|mini-apps` and are used by the header menu, the home line-up and the ending dock.
+  - Never use characters or emoji as menu icons.
+- **The ending, «پردهٔ آخر»** (`ProductEnding`), replaces the generic CTA box (title, text, two buttons and a next-product card). It has:
+  - the page's own object in its final state (face-maker, the lit brain, the shelf with empty slots, a blank canvas, the prompt box again);
+  - one sentence;
+  - one button carrying the product's real first action;
+  - «تعرفه‌ها» as a quiet link;
+  - the five-product dock, where the current product is the pill and the next one loops its icon piece.
+- **No beta flags.** «آزمایشی» was removed everywhere on owner instruction.
+- **No emoji as icons**, even where the dashboard uses them. Use line icons, or a tiny live preview that is itself the icon.
 
-**Agents: «گروه» (the crew).** Through-line: a task card. (1) Hero, word couriers: «یک همکار هوشمند برای [پژوهش | پشتیبانی | فروش | محتوا]»; a لومک walks in, takes the word off-stage, another brings the next. (2) Assemble, pinned scroll scene: an empty agent card; scrolling sends couriers with role, model, tools, skills, knowledge, memory, each docking as a chip; afterwards the visitor swaps the role and the tools re-dock. (3) A day at work: the task card relayed through three stations (read a knowledge file, call a tool, write a result), ending as a real deliverable. (4) Memory: the visitor picks a preference on «شنبه»; on «چهارشنبه» the agent applies it unprompted. (5) Store shelf: agents in a line, the hovered or focused one steps forward and presents its card. (6) CTA: the crew carries the button label in. Remembered: the spark lighting when the sixth part docks.
+## 3. The five pages as built (review 12)
 
-**My Teacher: «دفترِ زنده» (the living notebook).** Ruled paper inside glass, an ink line that draws (small SVG strokes, `data-diagram`); no characters. Through-line: one real question in every format. (1) Hero: pick one of three questions; it types word by word and the lesson opens. (2) Step-by-step, pinned: each scroll step writes the next line of working; «چرا؟» on a line expands the reason. (3) A real quiz: four options; a wrong answer gets a calm explanation, a right one lights a node in the next section. (4) Concept map grows from that node; hover/focus traces prerequisites. (5) Flashcards: flip (`rotateY`), rate «بلد بودم» / «سخت بود», the card flies to «فردا», «۳ روز بعد» or «هفته بعد». (6) Progress panel with what the visitor did on the page, beside a lesson player that highlights the sentence being read. Remembered: the rated card landing on its future day.
+| Page | Spatial model | Remembered image | Hero | Pinned scene | Ending object |
+|---|---|---|---|---|---|
+| Agents «اتاق کار» | a room (live 3D) | a chat message leaves the chat and becomes a task card in a robot's hands; the lead summons helpers and checks their work | messenger panel beside the 3D room; four real suggestions; the file comes back with «روند کار» | sub-agents: hand over → split → summon a helper and a temporary agent → check (one sent back) → deliver | face-maker |
+| Teacher «مغزِ تو» | a brain | a brain that lights up by how sure you were | the three real doors map the lesson onto the brain | (the brain rides in a sticky rail beside three chapters) | the brain as lit |
+| Assistant «برشِ یک پاسخ» | a cross-section | one sentence lights in a file and travels into the answer | widget with a fan of the business's files | descent through «سایت شما / دانش / رفتار» | a shelf with empty slots |
+| Workflows «تخته‌رسم» | a drafting board | catalogue tiles march along the grid into a machine | a symmetric diamond; two inputs take two lanes | the 24-node table; five tiles travel on right angles into a row | the blank canvas |
+| Mini-Apps «بگو، ساخته می‌شود» | a workbench | the prompt's words fly out and become the app's parts | prompt → device grows → passes (اسکلت · چیدمان · ظاهر · کارکرد) → a working app | a filmstrip of versions | the prompt box again |
 
-**Smart Assistant: «صفحه خودش دمو است».** Through-line: a scripted demo widget docked on the page, labelled «نمونه نمایشی»; on phones an inline stage, never a floating overlay. (1) Hero: a miniature "your site" frame; the widget wakes and greets. (2) Knowledge, scroll scene: files and a sitemap flow into it; an answer appears with citation chips; focusing a chip lights its source. (3) Guided tour: the widget proposes «ببرمت به بخش نصب؟»; only on confirmation does the page scroll there and a spotlight ring lands on the target; the beats پیشنهاد → تأیید شما → انجام are visible. (4) Three ways in: plain site snippet, WordPress plugin, `@luma-ai/react`, code typed word by word with copy. (5) Make it yours: colour, position and greeting controls restyle the page's own widget live. Remembered: it asks permission, then really takes you somewhere.
+**Teacher's three owner ideas must always show:**
+1. Learning is personal: weak parts rise, strong ones fold.
+2. No scores: answer, then «چقدر مطمئنی؟». Right and sure = solid, right and guessed = half, wrong and sure = review first.
+3. Interactive components instead of walls of text.
 
-**Workflows: «خودت اجرا کن».** Through-line: a data packet carried by one runner. (1) Hero canvas with one wire missing; the visitor drags or taps to connect it and the run starts (attract mode connects it itself after 6s). (2) Camera, pinned: one large workflow; scroll moves a single transformed camera layer node → flow → branch → pause. (3) Branch and pause: a condition toggle chooses the branch; at the ask-the-user node the runner stops, turns, and asks a real question; the answer changes the output. (4) Templates and store: each card unfolds into its mini canvas on hover/focus. (5) Publish: the canvas folds into one endpoint card with a typed request; a runs history fills with labelled sample rows. Remembered: the workflow stops and waits for you.
+**Smart Assistant is RAG:** a person asks, it searches the files, finds the passage, and answers by its instructions. Knowledge says *what*; behaviour says *how*.
 
-**Mini-Apps: «بگو، بازی کن».** Through-line: one app, born and then played. (1) Hero: pick one of three prompts; the app assembles in a device frame and is really playable (an original DOM micro-game or tool), with a «بتا» badge. (2) Versions, scroll scene (also draggable): v1 → v4, one feature per chat message. (3) Remix wall: directory tiles with CSS-only previews; «ریمیکس» peels a copy into "your" tray with a change applied. (4) Safety review: the inspector لومک walks the checklist, items tick, the app is stamped «تأیید شد». (5) Store by kind: games, learning tools, prototypes; only one playable mounted at a time. Remembered: playing something built in front of you ten seconds earlier.
+## 4. Characters: 3D agents (Agents page only)
 
-## 4. Guardrails
+- **Stack:** plain `three`, one imperative world class in a lazy client island (`components/product-v2/agents/world/`). No r3f and no model files.
+- **Bodies:** one superquadric reshaped per kind: orange squircle (the lead), blue diamond (a helper), purple sphere with a sparkle (the temporary agent).
+  - Shading: a runtime-painted `MeshMatcapMaterial`. Convert `THREE.Color` to sRGB before painting a canvas; a linear-space colour paints the bodies too dark.
+  - Details: white eyes with pupils that follow, an antenna with a yellow ball on a spring, mitts only while carrying, and a blob shadow.
+- **Moves:** hop-glide (320ms per hop with squash and stretch), carry overhead (the face stays visible), hand-over arc, summon ring arriving at .6 → 1.08 → 1, check-lean with a pupil sweep, then a nod or a head tilt.
+- **Performance:**
+  - Import `three` only when the stage is within one screen; dispose it far away.
+  - Run the loop only on screen and with the tab visible; idle at 30fps.
+  - Cap DPR at 2 (1.5 on phones), dropping to 1 on slow frames.
+  - An SVG poster of the same avatars sits under the canvas; with no WebGL or a lost context, the poster stays.
+  - Reduced motion renders still frames.
+- **Elsewhere:** no WebGL on the other product pages. Characters there are absent (Workflows uses a light pulse; Teacher uses the brain) or 2D avatars of the same set.
 
-**Budgets** (on top of `performance-and-verification.md`): the character sheet ≤ 4 KB gzip SVG + 3 KB CSS, shared by all product pages; each interactive scene is a lazy island ≤ 12 KB gzip, mounted on approach or idle, never on the critical path; at most 2 islands live at once, off-screen ones paused or unmounted; the H1 stays the LCP element, server-rendered with its first word in place; characters count toward the 3–4 loops per mobile viewport; no new dependencies (no Lottie, Rive, GSAP, canvas or WebGL).
+## 5. Implementation lessons
 
-**Cheap character animation:** CSS keyframes on three nested transforms, state in `data-*` attributes, a timeout scheduler (like the hero studio; no `requestAnimationFrame`), geometry measured once on resize, `will-change` only while walking.
+- **Writing modes:** with `writing-mode: vertical-rl`, `inline-size` and `block-size` swap axes. Size vertical spines with physical `width` and `height`.
+- **`translate` and `transform` in one element's transition** did not reset reliably. Put the X leg on a wrapper and the Y leg on the element for L-shaped (orthogonal) travel.
+- **Geometry module names:** never pair `brain.ts` with `Brain.tsx`. Windows is case-insensitive and TypeScript refuses it.
+- **Layout shift:**
+  - Reorder lists by transform (absolute rows at `translateY(order × row)`), never by DOM order.
+  - Stack alternative messages in one grid cell and toggle visibility.
+  - Move travelling chips by transform with `cqh` offsets, not `top`.
+- **Dead space beside a tall stage:** stretch the side column (rows `1fr`, `align-content: space-between`, or a panel that fills the row).
+- **HomeMotion under dev StrictMode:** re-observe elements already staged `data-revealed="false"`. The late-hydrating footer allows attribute differences (`suppressHydrationWarning`).
 
-**Reduced motion and no JS:** every scene rests on its finished frame with all steps as text; word slots show the first word plus a static list of the others; characters stand still or are hidden.
+## 6. Guardrails
 
-**Touch and keyboard:** every drag has a tap equivalent, every hover a focus and in-view equivalent; targets ≥ 44px; scenes use `touch-action: pan-y`; custom controls have roles and arrow keys; outcomes are announced in a polite live region.
+**Budgets** (on top of `performance-and-verification.md`):
+- `three` loads only on `/product/agents`, never on the critical path; scene code ≤ 20 KB gzip, ≤ 24 draw calls, no shadow maps.
+- Other islands ≤ 15 KB gzip, with at most 2 live.
+- The H1 is the LCP element.
+- Stages reserve their box.
+- At most 4 loops per phone viewport, all paused off-screen.
 
-**Proof** (beyond the gate): a filmstrip of each character sequence (enter, grab, carry, hand-off, exit) at 375 and 1440; before/after frames of each interaction driven by real input; the pinned screen on phone, laptop and tall monitor; a 12s idle and an input-driven layout-shift run; a 4× CPU trace with no long task from any scene; a reduced-motion walk. The fresh-eyes brief adds: "After ten seconds, can you say what the product does?"
+**Reduced motion and no JS:** every scene rests on its finished frame with its steps as text.
 
-## 5. Forbidden on product pages
+**Touch and keyboard:** every hover has a focus and in-view equivalent; custom controls have roles; outcomes are announced in polite live regions.
 
-A gimmick that explains nothing about the product; characters with mouths, speech bubbles, celebrations or confetti; a character taller than 56px or more than three on screen; characters on My Teacher or Smart Assistant; a scene that needs input before it shows anything; scroll-jacking or navigation without the visitor's confirmation; fake live chat presented as real; invented metrics; a product page built on a service skeleton or on another product's scenes; sound effects.
+**Proof:** the gate, plus frames of each interaction at 375 and 1440 px, the pinned scene on phone, laptop and tall monitor, and a fresh-eyes read that asks "After ten seconds, can you say what the product does, and what will you remember?"
+
+## 7. Forbidden on product pages
+
+- A redrawn dashboard screen as the main idea.
+- The same section skeleton repeated across sections or pages.
+- Small grey capsule mascots.
+- Emoji icons.
+- «آزمایشی».
+- A generic CTA box.
+- A capability list without use-cases.
+- A gimmick that explains nothing about the product.
+- Characters with mouths, speech bubbles, confetti or celebrations.
+- A scene that needs input before it shows anything.
+- Scroll-jacking.
+- Fake live chat presented as real.
+- Invented metrics.
+- Sound.

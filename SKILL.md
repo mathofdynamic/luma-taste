@@ -58,7 +58,14 @@ These come from the owner's reviews of the site. They override generic design ad
 
 25. **The background is designed too (owner review 10).** A page is not only its foreground: behind every page (service and content alike) there is one shared detail layer that relates the background to the content: rails on the page column's edges, a fine dot field in the margins, a dashed seam with a small "+" on each rail and a section number where major sections begin, faint rings behind the top of the page, and at most one or two living touches (a soft light travelling along a rail, the margin dots brightening in the brand gradient around the pointer). Detail is found, not announced: lines and dots stay around 6 to 11% of the text colour, nothing crosses or sits behind body text, and it is cheap (fixed layers that never repaint on scroll, transform-only motion, no scroll handlers, off under reduced motion and on touch). Build it once in the layout, never per page; tune it, do not multiply it. (`signature-patterns.md` §13.)
 
-26. **Crafted products get their own tier (owner review 11).** Luma's own products (Luma Agents, My Teacher, Smart Assistant, Workflows, Mini-Apps) live under `/product/*` with their own header menu «محصولات», separate from the commodity services. Their pages go much further than service pages: the visitor does the product once (real input changes the outcome), one object travels the whole page and carries each section into the next, a full-width stage per screen, staged motion with beats, and the shared «لومک» characters where they fit, while every brand, grid, performance and proof rule stays. Get creative direction from the adviser model before planning. (`references/product-pages.md`.)
+26. **Crafted products get their own tier (owner review 11).** Luma's own products (Luma Agents, My Teacher, Smart Assistant, Workflows, Mini-Apps) live under `/product/*` with their own header menu «محصولات», separate from the commodity services. Their pages go much further than service pages, and every brand, grid, performance and proof rule stays.
+    - Meaning first: write what the visitor should understand and remember, then stage *how the product works inside*, never a redrawn dashboard screen.
+    - One nameable image per page, and each page its own spatial model (review 12 rejected five identical pill + centred H2 + box pages as "AI slop").
+    - Use-cases before capability lists.
+    - The visitor's input changes the ending; every page ends on «پردهٔ آخر» (its own object, one button and the five-product dock) instead of a CTA box.
+    - Product icons are drawn in the ServiceIcon family. No emoji icons, no beta flags.
+    - Characters are large and in the dashboard's own avatar style (live three.js only on Agents), or absent.
+    - Get creative direction from the adviser model (effort xhigh, with the owner's words) before planning, and self-score creativity ≥ 9. (`references/product-pages.md`.)
 
 ## Content pages (owner review 09)
 
@@ -122,7 +129,7 @@ Before building, fill this table for the page (content pages: fill only Entrance
 | `references/entrance-motion-contract.md` | Progressive enhancement and surface state handling (its timing tokens are overridden by Luma) |
 | `references/layout-and-components.md` | Grid, dead space, cards, card rows and demo stages (§7), components, hover vocabulary, section recipes, no-clipped-text rule |
 | `references/performance-and-verification.md` | Budgets, how to keep rich motion cheap, the audit, the evidence report |
-| `references/product-pages.md` | **Product pages** (`/product/*`): the product-tier rules, the «لومک» character system, per-product concepts, budgets, extra proof, forbidden list |
+| `references/product-pages.md` | **Product pages** (`/product/*`): ten principles with tests (review 12), the shared ending and icons, the five pages as built, the 3D agent system, implementation lessons, budgets, forbidden list |
 | `references/design-process.md` | Planning, avoiding generic output, writing Persian UI copy, self-critique |
 
 Assets: `assets/luma-tokens.css`, `assets/luma-motion.css`, `assets/luma-motion.js`, `assets/luma-hover-stories.css` (starter hover stories). Script: `scripts/motion-audit.mjs`. All were tested in headless Chromium; adapt them to the project, do not paste blindly.

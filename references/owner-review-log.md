@@ -170,6 +170,29 @@ Format: **what was shipped → why it was rejected → the rule → how to check
     - Rules: SKILL.md rule 26 and `references/product-pages.md`: a third page kind under `/product/*` with its own menu; the visitor does the product once; one through-line object hands each section to the next; one full-width stage per screen; beats in staged motion; at most two loud scenes; the «لومک» character system (Agents full cast, Workflows one runner, Mini-Apps one inspector; never on My Teacher or Smart Assistant); lazy islands within budget; extra proof (character filmstrips, input-driven before/after, 4× CPU trace, reduced-motion walk); creative direction drafted with an adviser model first.
     - Check: the plan classifies the page as a product page, names its through-line and the scene the visitor does, and lists its section shapes against the ledger (services and retired shapes included); the fresh-eyes reviewer answers "after ten seconds, can you say what the product does?"
 
+## Review 12 — The five product pages were generic (2026-11-14)
+
+40. **All five `/product/*` pages, first build:** the owner rejected them as "AI slop".
+    - What was wrong:
+      - Every page and section was the same object: a pill, a centred H2 and a dark box with small redrawn dashboard parts.
+      - The characters were crude grey capsules unlike the dashboard's real agent avatars.
+      - The menu and home icons did not match the site's icons, and emoji were used as icons.
+      - The CTA (title, text, two buttons and a next-product card) was generic on every page.
+      - Agents showed neither its messenger-like chat, nor use-cases, nor sub-agents ("we could hand them a file … they would go start sub agents … and then visit their works until the task is done").
+      - Teacher missed its three ideas (personal, certainty instead of scores, interactive components) and copied a dashboard concept map ("stop copying the dashboard; think in the user's shoes").
+      - Assistant did not show RAG (asking, searching the files, finding, answering by instructions).
+      - Workflows broke grids and symmetry, and its hero was rushed.
+      - Mini-Apps carried «آزمایشی» and lacked the familiar prompt-becomes-app hero.
+    - Root cause: the skill's product rules described staging devices (a through-line, characters, hand-offs) but not meaning. The builder copied dashboard screens into boxes instead of asking what the visitor should understand and remember, and the adviser model was not briefed hard enough on creativity.
+    - Rules: `product-pages.md` rewritten:
+      - ten principles with tests: meaning first, stage the mechanism not the screen, one nameable image, its own spatial model per page, motion verbs, three reading distances, large on-style characters or none, the visitor's hand changes the ending, use-cases before capabilities, and everything true;
+      - the shared «پردهٔ آخر» ending and dock;
+      - product icons in the ServiceIcon family;
+      - no beta flags and no emoji icons;
+      - live 3D agents (three.js, lazy) on Agents only;
+      - the five pages as built, with the implementation lessons.
+    - Check: for every product page, write the visitor's takeaway sentence and the remembered image before designing; get an adviser concept (effort xhigh) with the owner's words in the brief; self-score creativity ≥ 9. The fresh-eyes reviewer answers "what does it do, and what will you remember tomorrow?" and compares the section silhouettes of two pages.
+
 ## Section critique (required before reporting, owner review 04)
 
 The audit proves behaviour, not composition. Composition is checked here, section by section, by looking.
@@ -221,5 +244,15 @@ The audit proves behaviour, not composition. Composition is checked here, sectio
 - [ ] Service pages: page-shape ledger in the report: this page's section shapes differ from the last three pages; at least one scroll-driven scene (`NO_SCROLL_SCENE` clean with `--service`).
 - [ ] Content pages: standard layout for the kind, each article or post on its own URL, no ordering of independent topics, no service-page devices, quiet motion; consistent with other pages of the same kind.
 - [ ] Background detail layer present and subtle (owner review 10): rails on the column edges, margin dots, seams with "+" and section numbers at major breaks, nothing crossing content; pointer light and rail light off on touch and under reduced motion; no audit regressions.
-- [ ] Product pages (owner review 11): through-line named, a scene the visitor really does (input changes the outcome), sections hand off, characters only where `product-pages.md` allows, islands within budget, character filmstrips and input-driven frames captured.
+- [ ] Product pages (owner reviews 11 and 12):
+  - the visitor's takeaway sentence and the remembered image are written down;
+  - the page has its own spatial model (no repeated pill + centred H2 + box);
+  - the mechanism is staged, not a redrawn dashboard screen;
+  - use-cases come before capabilities;
+  - a scene the visitor really does changes the outcome;
+  - the page ends on «پردهٔ آخر»;
+  - icons are in the ServiceIcon family, with no emoji and no «آزمایشی»;
+  - characters are large and on-style (3D only on Agents) or absent;
+  - islands are within budget;
+  - input-driven frames are captured.
 - [ ] Section critique done from the native-size section frames (rest and mid), every verdict ship or fix, a fresh-eyes reviewer's findings handled, table in the report.

@@ -119,12 +119,12 @@ Loops are where pages go wrong. Every loop must satisfy **all** of these, and th
 4. **Interruptible by the user.** Marquee pauses on hover and focus-within. Nothing auto-moving blocks reading or focus.
 5. **Reduced-motion safe.** Gradient becomes a static gradient; marquee becomes a swipeable scroller with the duplicate set hidden; orbit stops.
 6. **Accessible.** The duplicate set is `aria-hidden` and `inert`/not focusable; moving content has a pause path; no flashing.
-7. **Clean lifecycle.** Observers disconnect on unmount; no JS animation loops (`requestAnimationFrame`) unless unavoidable, and then a single shared ticker that stops off-screen and when the tab is hidden. Sanctioned tickers: the lens marquee (each card's transform depends on its on-screen position; it writes transforms only and never reads layout per frame) and the hero studio scheduler (timers that switch scene state; CSS does the motion).
+7. **Clean lifecycle.** Observers disconnect on unmount; no JS animation loops (`requestAnimationFrame`) unless unavoidable, and then a single shared ticker that stops off-screen and when the tab is hidden. Sanctioned tickers: the hero studio scheduler (timers that switch scene state; CSS does the motion).
 8. **Proven.** Evidence per loop in the report: selector, properties, period, running state in and out of view, seam frames, reduced-motion result.
 
 ### Recipes (full code for the signature ones in `signature-patterns.md`)
 - **Hero studio:** scene scheduler with phases `type → process → reveal → hold`, 4-5s per scene, gated like any loop. §4 of `signature-patterns.md`.
-- **Lens marquee:** JS ticker, edge masks, per-card rotateY/scale/opacity from on-screen position. §8 of `signature-patterns.md`.
+- **Quote deck:** state-driven depth (front, 1–3 behind, thrown), CSS transitions on transform/opacity; pointer drag writes one CSS variable. The lens marquee (§8 of `signature-patterns.md`) is retired by owner review 13.
 - **Gradient word:** `.lm-gradient-word` (6s, symmetric five-stop gradient, `background-size: 200%`, shift 200%). Period tunable with `--lm-gradient-period`.
 - **Marquee:** `.lm-marquee > .lm-marquee__track > [set A][set B aria-hidden data-dup]`; period with `--lm-marquee-period` (about 30s per 3 cards). Second row: `--lm-marquee-direction: reverse`. The track is `direction: ltr` and each card `direction: rtl`.
 - **Orbit / ecosystem diagram:** inline SVG; rings rotate with `transform: rotate()` at 40 to 80s linear (counter-rotate the labels so text stays upright); nodes pulse with scale 1 to 1.04; hovering a node raises that connector's opacity. Gated like any loop.

@@ -193,6 +193,22 @@ Format: **what was shipped → why it was rejected → the rule → how to check
       - the five pages as built, with the implementation lessons.
     - Check: for every product page, write the visitor's takeaway sentence and the remembered image before designing; get an adviser concept (effort xhigh) with the owner's words in the brief; self-score creativity ≥ 9. The fresh-eyes reviewer answers "what does it do, and what will you remember tomorrow?" and compares the section silhouettes of two pages.
 
+
+## Review 13 — Home polish and product pages, round 2 (2026-11-17)
+
+41. **Home + all product pages after PR #8:**
+    - Loved: the product icon tiles. Wanted: a still shine line on the tile's top edge, and that tile used for icons everywhere (menus first, services with bigger icons). → `tile.module.css`, rule 27.
+    - Services: random card sizes and a «مشاهده همه» toggle were wrong → one bento showing all services, features 2×2; «جدید» as a lit corner tag.
+    - Hero studio showed too few tools → nine tools.
+    - Testimonials lens marquee "a disaster" → rebuilt as a quote deck with drag/throw and autoplay (rule 10). A quote named a competitor; removed.
+    - A visible horizontal cut where the closing section's glow began, on almost every page → no top-anchored glows; transparent sections, masked glows.
+    - Footer crammed → four bands with room to breathe.
+    - Agents preset cards "don't look like Luma items" → role tile, capability icons, ten-step meter, gradient edge, timer line. Product dock boxes were unequal → five equal cards, same tile.
+    - Teacher "a disaster": a poorly drawn brain repeated over the page made it feel like a brain tool → no brain; a lesson page that rewrites itself per mode (prism diagram, unlocking hints, weighed sources), chapters on the full width with alternating sides, a lesson report as the ending. Lesson: a metaphor illustration must be drawn well and used once at most; never let it become the product.
+    - Assistant lacked detail and leaned on scroll for everything → richer inside view (query vector, ranked closeness scores, the context the model reads) with autonomous loops inside the pinned scene; the ending shelf now fills with files and answers from each.
+    - Workflows: the 24-tile table was crowded → grouped node pills beside a spotlight with ports; plus a use-cases section (four recipes built from real nodes that end as small tools).
+    - Mini-apps: the ending repeated the hero prompt box → removed.
+
 ## Section critique (required before reporting, owner review 04)
 
 The audit proves behaviour, not composition. Composition is checked here, section by section, by looking.
@@ -230,7 +246,7 @@ The audit proves behaviour, not composition. Composition is checked here, sectio
 - [ ] Comparisons follow the pointer; no slider under media; keyboard arrows work.
 - [ ] Media tiles: skeleton while loading, smooth reveal on decode, fallback on error.
 - [ ] Explainer stories are legible, play on view, repeat while in view, no replay buttons.
-- [ ] Testimonials: edge fade and lens effect (also at 375px: neighbors peek, the centered card is flat); pause on hover/focus; reduced motion = swipeable static row.
+- [ ] Testimonials: quote deck inside the container (front card readable, drag/throw, autoplay with progress, pauses on hover/focus/off-screen); no competitor names in quotes.
 - [ ] Idle at the top for 12s: nothing moves the layout (`IDLE_LAYOUT_SHIFT` clean).
 - [ ] Fast scroll from top to bottom at 375 and 1440: total layout shift 0.01 or less (`SCROLL_LAYOUT_SHIFT` clean), including lazy sections and loading media.
 - [ ] Typed text appears word by word in reading order (`MULTILINE_WIPE` clean).

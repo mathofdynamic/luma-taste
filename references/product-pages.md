@@ -124,3 +124,12 @@ Still binding from review 11:
 - Fake live chat presented as real.
 - Invented metrics.
 - Sound.
+
+## 8. Review 13 changes (2026-11-17)
+
+- **Teacher:** no brain anywhere. Hero = the tutor's three doors beside a lesson page that rewrites itself per door (prism diagram that draws itself / hints that unlock / sources weighed, the unsourced one struck). Chapters on the full width (words 4 cols, demo 8 cols, alternating, sticky words). Ending = lesson report (mastery ring, six concept states, where the next lesson starts).
+- **Assistant:** the pinned descent keeps its camera but gains autonomous detail: the query as a shimmering vector, every file's closeness score (best first), the three pieces of the context window. Ending shelf fills with files on its own and the widget answers from each new file.
+- **Workflows:** use-cases first (four recipes of real nodes that end as small tools, chain lights node by node, then the tool's input and output), then the node library (grouped pills + spotlight node with LTR ports). The crowded 24-tile table and its pinned assembly are retired.
+- **Agents:** preset cards = role tile + name/job + the capability icons it switches on + ten-step meter; chosen card has the gradient edge and a timer line.
+- **Mini-apps:** ending has no object (the hero prompt is not repeated).
+- **Shared ending dock:** five equal cards (tile icon, name, one line), current and next marked by border/caption colour only.

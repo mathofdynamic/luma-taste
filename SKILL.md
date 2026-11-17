@@ -1,6 +1,6 @@
 ---
 name: luma-taste
-description: Luma's design taste for building, restyling or animating any page, section, component, modal or menu of LUMA (lumai.ir / لوما). Covers the visual identity (dark premium, purple-magenta-orange gradient, Persian RTL), the motion system (calm scroll-driven entrances, animated gradient title words, hover-reactive cards, living explainer stories, lens testimonial marquee, morphing navigation menus, circular theme switch, liquid-fill buttons, blur+low-opacity materials), the page grid, readable cards, media loading, and the performance and evidence rules that keep all of that fast. Includes the owner's review log so earlier mistakes are not repeated. Make sure to use this skill whenever the user mentions Luma, لوما, the landing page, home page, any Luma page, hero, navigation, menus, services, showcase, gallery, testimonials, bento or explainer sections, redesign or restyle, hover or scroll animation, gradient titles, marquee, theme switching, buttons, modals or menus, or asks for a "better looking" Luma page, even if they never say "taste" or "skill". It separates service pages (rich motion, scroll scenes, explainers) from content pages (docs, help center and articles, blog and posts, about, contact, legal), which follow the standard layout for their kind.
+description: Luma's design taste for building, restyling or animating any page, section, component, modal or menu of LUMA (lumai.ir / لوما). Covers the visual identity (dark premium, purple-magenta-orange gradient, Persian RTL), the motion system (calm scroll-driven entrances, animated gradient title words, hover-reactive cards, living explainer stories, testimonial quote deck, morphing navigation menus, circular theme switch, liquid-fill buttons, blur+low-opacity materials), the page grid, readable cards, media loading, and the performance and evidence rules that keep all of that fast. Includes the owner's review log so earlier mistakes are not repeated. Make sure to use this skill whenever the user mentions Luma, لوما, the landing page, home page, any Luma page, hero, navigation, menus, services, showcase, gallery, testimonials, bento or explainer sections, redesign or restyle, hover or scroll animation, gradient titles, marquee, theme switching, buttons, modals or menus, or asks for a "better looking" Luma page, even if they never say "taste" or "skill". It separates service pages (rich motion, scroll scenes, explainers) from content pages (docs, help center and articles, blog and posts, about, contact, legal), which follow the standard layout for their kind.
 ---
 
 # Luma Taste
@@ -39,7 +39,7 @@ These come from the owner's reviews of the site. They override generic design ad
 7. *(service pages)* **The hero shows the breadth of Luma.** The hero visual is a living product demo that cycles through several tools (create image, edit, video, try-on, assistant…) with real results. A hero that shows a single tool is wrong.
 8. **Navigation feels like one object.** Active page = a pill around the item (never underlines). Dropdowns open on hover intent and close when the pointer leaves; one shared glass panel morphs and slides (ease-in-out) between triggers; items have icons and stagger in. The mobile menu stands out from the page (dim scrim + dense glass) and shows every item without an inner scrollbar.
 9. *(service pages)* **Explainers tell a story you can read.** Bento and explainer cards play a legible, meaningful animation (1.2 to 3s) when they enter the view and gently repeat while in view; hover replays it. No "replay" buttons, no 300ms twitches nobody notices.
-10. **Testimonials are a full-bleed lens marquee.** Infinite marquee running edge to edge of the viewport (the one content exception to the container), edges fade out, and cards grow and turn toward the viewer near the edges (concave "lens" effect). Pauses on hover/focus with no visible pause button; static and swipeable under reduced motion.
+10. **Testimonials are a quote deck (owner review 13 replaced the lens marquee, which "turned into a disaster").** Inside the container: a large readable front card with the next three fanned behind it, beside the list of people. Drag/throw the front card (or arrows, keyboard, picking a person); it flies off and the next rises. Autoplays about every 6.5 s with a progress line on the active person; stops on hover, focus, off-screen and under reduced motion. Transform/opacity only. Never name a competitor inside a quote.
 11. **Materials: backdrop blur plus LOW opacity** for the header, menus, popovers and image lightbox. Never opaque, never blur alone. Menus use the strong glass (about 24px blur). Recipes in `assets/luma-motion.css`.
 12. **Interactions have craft.** Primary buttons fill with a liquid wave of the inverse color on hover (not an instant color swap). Theme switching reveals the new theme in a circle growing from the toggle. Before/after comparisons follow the pointer on hover (drag on touch, arrow keys on keyboard); never a range slider under the image.
 13. **Media never pops.** Every image and video tile shows a skeleton shimmer while loading and reveals smoothly when decoded. Failures show a quiet fallback with retry.
@@ -66,6 +66,14 @@ These come from the owner's reviews of the site. They override generic design ad
     - Product icons are drawn in the ServiceIcon family. No emoji icons, no beta flags.
     - Characters are large and in the dashboard's own avatar style (live three.js only on Agents), or absent.
     - Get creative direction from the adviser model (effort xhigh, with the owner's words) before planning, and self-score creativity ≥ 9. (`references/product-pages.md`.)
+
+27. **Polish details that apply everywhere (owner review 13).**
+    - Icons sit on the **icon tile** (`components/landing-v2/tile.module.css`): a rounded square lit from above, a soft purple glow from the top edge and a thin, still shine line on that edge (the same light as the side rails). Use it wherever an icon stands for a tool or product: header menus, services, product dock, preset cards.
+    - **No seams between sections.** A section's tint or glow never starts at its top edge: keep sections transparent so the backdrop runs through, and centre glows behind the content with a mask that fades before both edges.
+    - **The footer breathes:** separate bands (brand + social, every link column on the full width, contact beside trust badges, legal line), never a brand column squeezing the links.
+    - **Show everything that exists.** No «مشاهده همه» toggles for the service grid: all services in one bento with deliberate sizes (features 2×2, a wide 2×1, the rest 1×1, dense flow, no holes). «جدید» is a small lit tag in the card corner, not a grey pill under the text.
+    - The **hero studio covers most tools** (image, edit, background removal, upscale, video, try-on, voice, song, chat), not a handful.
+    - A product page never repeats its hero object as its ending object; the ending dock is five equal cards with the same tile.
 
 ## Content pages (owner review 09)
 
@@ -104,7 +112,7 @@ Before building, fill this table for the page (content pages: fill only Entrance
 | Showcase (before/after) | scroll-driven | comparison follows pointer / drag / arrows (pauses autoplay) | divider sweeps at each case | cycles through its cases by itself |
 | Gallery | tiles as they enter, after decode | tile hover zoom + play badge | skeleton → image reveal | skeleton shimmer while loading |
 | Explainer / bento | scroll-driven | each card replays its story on hover | stories play on view | stories repeat gently while in view |
-| Testimonials | scroll-driven | pause on hover/focus | none | full-bleed lens marquee |
+| Testimonials | self-playing deck | drag/throw, pick a person | none | quote deck beside people list |
 | Final CTA | scroll-driven | liquid-fill CTA | glow follows scroll | gradient word |
 | Footer | scroll-driven | link hover | none | none |
 | Modals, lightbox, menus | surface tokens (open 240-320ms, close 160ms) | focus return | none | none |
@@ -125,7 +133,7 @@ Before building, fill this table for the page (content pages: fill only Entrance
 | `references/owner-review-log.md` | **Always.** Rejected patterns, the rule each one became, the section critique, and the pre-delivery checklist |
 | `references/identity-and-tokens.md` | Any visual work: colors, gradient rules, typography, Persian rules, materials, shape |
 | `references/motion-system.md` | Any animation: timing tokens, decision gate, tool ladder, easing, hover, scroll, loops, gestures |
-| `references/signature-patterns.md` | Building nav menus, theme switch, buttons, hero studio, comparison, media loading, explainer stories, lens marquee, mobile menu |
+| `references/signature-patterns.md` | Building nav menus, theme switch, buttons, hero studio, comparison, media loading, explainer stories, quote deck, icon tile, mobile menu |
 | `references/entrance-motion-contract.md` | Progressive enhancement and surface state handling (its timing tokens are overridden by Luma) |
 | `references/layout-and-components.md` | Grid, dead space, cards, card rows and demo stages (§7), components, hover vocabulary, section recipes, no-clipped-text rule |
 | `references/performance-and-verification.md` | Budgets, how to keep rich motion cheap, the audit, the evidence report |

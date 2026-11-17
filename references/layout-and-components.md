@@ -2,7 +2,7 @@
 
 ## 1. The page grid is law
 
-- One container: `.lt-container` (max 1200px, side padding 20 / 32 / 48px by breakpoint). Every section's content sits inside it. Full-bleed backgrounds are allowed; **content** is not. The only content exception is the testimonial lens marquee, which runs edge to edge (`signature-patterns.md` section 8).
+- One container: `.lt-container` (max 1200px, side padding 20 / 32 / 48px by breakpoint). Every section's content sits inside it. Full-bleed backgrounds are allowed; **content** is not. There is no content exception any more (owner review 13 moved testimonials into the container as a quote deck).
 - **Measure the edges, do not eyeball them (review 02).** For every section, the first and last content boxes (header, grid, masonry columns) must start and end exactly at the container's content edges at 375, 768, 1024 and 1440px. A layout that can leave a column empty (CSS `columns`, auto-fill with too few items) breaks this at runtime even when the CSS looks right; see `signature-patterns.md` section 6.
 - 12-column grid (`.lt-grid`, gutter 16 to 24px). Mobile: 4 effective columns (cards span 6 of 12 for 2-up, or 12 for 1-up). Tablet: 8. Desktop: 12.
 - Cards, media and text blocks start and end on column edges. Do not nudge elements by arbitrary pixels, and do not center one block inside a left-aligned flow unless it is a short headline block.
@@ -89,7 +89,7 @@ Plain text-only explainers get one playful touch: an underline that draws under 
 - **Services grid:** 2 columns on mobile, 4 on desktop; icon plate, title, full description; whole card is the link; all service links stay in the server-rendered HTML; extra services behind "مشاهده همه".
 - **Gallery:** 2-column masonry on mobile, 3 on tablet, 4 on desktop, columns on the page grid and distributed in JS (never CSS `columns`); 12 tiles first, then load more; each batch reserves its height before data arrives; poster-first video; skeleton tiles while loading; tiles reveal as each image decodes (`signature-patterns.md` section 6).
 - **Bento / explainer:** different card sizes for hierarchy; each card has its story (section 5).
-- **Testimonials:** full-bleed lens marquee with edge fades (`signature-patterns.md` section 8), two rows on desktop (opposite directions), one row on mobile; no pause button (hover/focus stops a row); reduced motion becomes a swipeable scroller.
+- **Testimonials:** quote deck (owner review 13): front card large, three fanned behind, people list beside (a chip row on phones); drag/throw, arrows, keyboard; autoplay with a progress line; reduced motion = cross-fade without autoplay. The old lens marquee is retired.
 - **Showcase (before/after):** text column with the use cases as cards (title + one-line description) so it balances the media column; media 4/3 or 1/1 on desktop; pointer-following comparison; **it cycles through the cases by itself** (`signature-patterns.md` section 10).
 - **Motion benchmark (review 02):** the owner singled out the bento explainers ("تجربه نهایت قدرت" on the home page, `components/landing-v2/Bento.tsx` + `bento.module.css`) as the level of micro-animation every page should reach: each card a short readable film that plays in view, repeats, replays on hover, and rests on its finished frame. When building a new page, start its feature/explainer sections from that implementation.
 - **Final CTA:** one headline with the gradient word, supporting line, primary and secondary pills, one static glow; floating decoration only on desktop and static or gated.
